@@ -7,12 +7,16 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>-243.000000</x>
-  <y>-265.000000</y>
+  <x>-323.600000</x>
+  <y>-201.200000</y>
  </pos>
  <assets/>
  <jumps>
   <jump target="Gamma Polaris">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
+  <jump target="Zemur">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

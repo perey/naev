@@ -14,10 +14,6 @@
   <asset>Virtual Pirate Medium</asset>
  </assets>
  <jumps>
-  <jump target="Ariadus">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Corvus">
    <autopos/>
    <hide>1.250000</hide>

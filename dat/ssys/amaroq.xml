@@ -7,8 +7,8 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>117.000000</x>
-  <y>-890.000000</y>
+  <x>-1.634259</x>
+  <y>-986.932870</y>
  </pos>
  <assets>
   <asset>Amaroq I</asset>
@@ -20,7 +20,7 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Sultan">
+  <jump target="PSO">
    <autopos/>
    <hide>1.250000</hide>
   </jump>
