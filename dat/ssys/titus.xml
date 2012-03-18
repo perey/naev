@@ -22,6 +22,7 @@
   </jump>
   <jump target="New Haven">
    <autopos/>
+   <hidden/>
    <hide>1.250000</hide>
   </jump>
  </jumps>

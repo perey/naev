@@ -10,7 +10,9 @@
   <x>-443.368000</x>
   <y>-134.944000</y>
  </pos>
- <assets/>
+ <assets>
+  <asset>Virtual Pirate Medium</asset>
+ </assets>
  <jumps>
   <jump target="Jade">
    <autopos/>
