@@ -7,15 +7,11 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>365.121234</x>
-  <y>-963.416665</y>
+  <x>404.121234</x>
+  <y>-954.416665</y>
  </pos>
  <assets/>
  <jumps>
-  <jump target="Sagittarius Prime">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Sarrii">
    <autopos/>
    <hide>1.250000</hide>
