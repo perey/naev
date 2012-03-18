@@ -16,12 +16,12 @@
  <general>
   <class>0</class>
   <population>5000</population>
-  <hide>0.250000</hide>
+  <hide>0.750000</hide>
   <services>
    <land>srm_mil_restricted</land>
    <refuel/>
   </services>
   <commodities/>
-  <description>Vigil Station was built to honor all of those who had died in the ordeals of the Soromid. The system sees few visitors, and the station is considered mostly ceremonial than for actual defense. Nontheless, many Soromid want to be posted here, to connect with thier past.</description>
+  <description>Vigil Station was built to honor all of those who had died in the ordeals of the Soromid. The system sees few visitors, and the station is considered mostly ceremonial than for actual defense. Nontheless, many Soromid want to be posted here, to connect with their past.</description>
  </general>
 </asset>
