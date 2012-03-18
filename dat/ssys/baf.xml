@@ -10,13 +10,15 @@
   <x>276.584910</x>
   <y>-624.748747</y>
  </pos>
- <assets/>
+ <assets>
+  <asset>BGG-1356</asset>
+  <asset>Baf I</asset>
+  <asset>Baf IV</asset>
+  <asset>Dumas Station</asset>
+  <asset>MGG-1294</asset>
+ </assets>
  <jumps>
   <jump target="Beeklo">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
-  <jump target="Maus">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

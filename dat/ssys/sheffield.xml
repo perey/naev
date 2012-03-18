@@ -7,16 +7,16 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>-203.260449</x>
-  <y>-849.037303</y>
+  <x>-198.870017</x>
+  <y>-906.945482</y>
  </pos>
  <assets/>
  <jumps>
-  <jump target="Fried">
+  <jump target="Gold">
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Gold">
+  <jump target="Volus">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

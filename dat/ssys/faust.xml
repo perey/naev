@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ssys name="Faust">
  <general>
-  <radius>10000.000000</radius>
+  <radius>12500.000000</radius>
   <stars>400</stars>
   <interference>20.000000</interference>
   <nebula volatility="0.000000">50.000000</nebula>
@@ -10,22 +10,26 @@
   <x>190.678211</x>
   <y>-888.714763</y>
  </pos>
- <assets/>
+ <assets>
+  <asset>Faust III</asset>
+  <asset>Faust VI</asset>
+  <asset>PSO 2345</asset>
+ </assets>
  <jumps>
   <jump target="Allous">
-   <autopos/>
+   <pos x="13930.243258" y="7187.553192"/>
    <hide>1.250000</hide>
   </jump>
   <jump target="PSO">
-   <autopos/>
+   <pos x="-13367.809502" y="-2116.602232"/>
    <hide>1.250000</hide>
   </jump>
   <jump target="Sagittarius Prime">
-   <autopos/>
+   <pos x="14958.084201" y="-9174.405939"/>
    <hide>1.250000</hide>
   </jump>
   <jump target="Sultan">
-   <autopos/>
+   <pos x="-14754.766045" y="16925.007037"/>
    <hide>1.250000</hide>
   </jump>
  </jumps>

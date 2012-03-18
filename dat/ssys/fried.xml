@@ -19,11 +19,11 @@
   <asset>Fried Ia</asset>
  </assets>
  <jumps>
-  <jump target="Limbo">
+  <jump target="Gold">
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Sheffield">
+  <jump target="Limbo">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

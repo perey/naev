@@ -16,10 +16,6 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Baf">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Infinity">
    <autopos/>
    <hide>1.250000</hide>

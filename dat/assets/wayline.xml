@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Wayline">
+ <pos>
+  <x>-1404.285821</x>
+  <y>1179.600089</y>
+ </pos>
+ <GFX>
+  <space>P03.png</space>
+  <exterior>snow.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Independent</faction>
+  <value>50.000000</value>
+  <range>0</range>
+ </presence>
+ <general>
+  <class>P</class>
+  <population>75000</population>
+  <hide>0.250000</hide>
+  <services>
+   <land/>
+   <refuel/>
+  </services>
+  <commodities/>
+  <description>Wayline is a barely inhabited ball of ice. The almost sole reason for its exsistance is serving as a stopover point in the southern regions. Its sheer insignifigance serves as its primary defense, as not even the land-hungry Dvaered can muster up the urge to care about the place.</description>
+ </general>
+</asset>
