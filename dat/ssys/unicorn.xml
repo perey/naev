@@ -17,7 +17,6 @@
  <jumps>
   <jump target="Kretogg">
    <autopos/>
-   <hidden/>
    <hide>1.250000</hide>
   </jump>
   <jump target="Marat">
