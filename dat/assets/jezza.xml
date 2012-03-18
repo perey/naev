@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Jezza">
+ <pos>
+  <x>8642.211708</x>
+  <y>7029.014500</y>
+ </pos>
+ <GFX>
+  <space>K03.png</space>
+  <exterior>oceanic.png</exterior>
+ </GFX>
+ <general>
+  <class>X</class>
+  <population>0</population>
+  <hide>0.250000</hide>
+  <services/>
+ </general>
+</asset>
