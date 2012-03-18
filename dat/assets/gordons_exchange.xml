@@ -9,7 +9,7 @@
   <exterior>traderoom.png</exterior>
  </GFX>
  <presence>
-  <faction>Trader</faction>
+  <faction>Independent</faction>
   <value>75.000000</value>
   <range>3</range>
  </presence>
