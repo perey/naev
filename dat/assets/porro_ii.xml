@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Gilligan's Tomb">
+<asset name="Porro II">
  <pos>
-  <x>10279.897602</x>
-  <y>-6531.447050</y>
+  <x>8992.795004</x>
+  <y>-8378.968812</y>
  </pos>
  <GFX>
-  <space>A00.png</space>
-  <exterior>aquatic.png</exterior>
+  <space>G00.png</space>
+  <exterior>traderoom.png</exterior>
  </GFX>
  <general>
   <class>A</class>

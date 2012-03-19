@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Gilligan's Tomb">
+<asset name="Narousse III">
  <pos>
-  <x>10279.897602</x>
-  <y>-6531.447050</y>
+  <x>543.288947</x>
+  <y>-5926.751427</y>
  </pos>
  <GFX>
-  <space>A00.png</space>
-  <exterior>aquatic.png</exterior>
+  <space>I03.png</space>
+  <exterior>mining2.png</exterior>
  </GFX>
  <general>
   <class>A</class>
