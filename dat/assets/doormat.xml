@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Doormat">
+ <pos>
+  <x>3947.603473</x>
+  <y>4259.666989</y>
+ </pos>
+ <GFX>
+  <space>K00.png</space>
+  <exterior>mining2.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Empire</faction>
+  <value>150.000000</value>
+  <range>1</range>
+ </presence>
+ <general>
+  <class>L</class>
+  <population>45000</population>
+  <hide>0.250000</hide>
+  <services>
+   <land/>
+   <refuel/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
+ </general>
+</asset>

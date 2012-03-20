@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Rodney">
+ <pos>
+  <x>394.710797</x>
+  <y>592.066195</y>
+ </pos>
+ <GFX>
+  <space>moon-H02.png</space>
+  <exterior>mining2.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Soromid</faction>
+  <value>100.000000</value>
+  <range>2</range>
+ </presence>
+ <general>
+  <class>J</class>
+  <population>100000</population>
+  <hide>0.350000</hide>
+  <services>
+   <land/>
+   <refuel/>
+   <bar/>
+   <missions/>
+   <commodity/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
+  <bar>(null)</bar>
+ </general>
+</asset>
