@@ -10,7 +10,9 @@
   <x>-361.272018</x>
   <y>-255.614213</y>
  </pos>
- <assets/>
+ <assets>
+  <asset>Griffin I</asset>
+ </assets>
  <jumps>
   <jump target="Yarn">
    <autopos/>

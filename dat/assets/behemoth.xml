@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Sirou VI">
+<asset name="Behemoth">
  <pos>
-  <x>28264.232318</x>
-  <y>5317.606564</y>
+  <x>2511.437898</x>
+  <y>2385.866003</y>
  </pos>
  <GFX>
-  <space>C01.png</space>
-  <exterior>mining4.png</exterior>
+  <space>K02.png</space>
+  <exterior>station00.png</exterior>
  </GFX>
  <general>
-  <class>D</class>
+  <class>A</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

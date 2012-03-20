@@ -29,7 +29,7 @@
    <hide>1.250000</hide>
   </jump>
   <jump target="Shinnok">
-   <pos x="-30473.149729" y="21576.317045"/>
+   <autopos/>
    <hide>1.250000</hide>
   </jump>
  </jumps>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <asset name="Doormat">
  <pos>
-  <x>3947.603473</x>
-  <y>4259.666989</y>
+  <x>17178.228360</x>
+  <y>23587.655526</y>
  </pos>
  <GFX>
   <space>K00.png</space>
@@ -10,7 +10,7 @@
  </GFX>
  <presence>
   <faction>Empire</faction>
-  <value>150.000000</value>
+  <value>75.000000</value>
   <range>1</range>
  </presence>
  <general>
@@ -22,6 +22,6 @@
    <refuel/>
   </services>
   <commodities/>
-  <description>(null)</description>
+  <description>Doormat is a lightly populated frontier world still being terraformed. Despite the Incident, the Empire's population is still growing fast, and new worlds need to be sought out to lighten the load on any one world. Doormat is one of these worlds.</description>
  </general>
 </asset>

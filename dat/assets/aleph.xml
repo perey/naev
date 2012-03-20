@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Sirou VI">
+<asset name="Aleph">
  <pos>
-  <x>28264.232318</x>
-  <y>5317.606564</y>
+  <x>-3900.793946</x>
+  <y>-3495.111376</y>
  </pos>
  <GFX>
-  <space>C01.png</space>
-  <exterior>mining4.png</exterior>
+  <space>G02.png</space>
+  <exterior>mining6.png</exterior>
  </GFX>
  <general>
-  <class>D</class>
+  <class>H</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

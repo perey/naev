@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Sirou VI">
+<asset name="Sirou I">
  <pos>
-  <x>28264.232318</x>
-  <y>5317.606564</y>
+  <x>-10104.777773</x>
+  <y>2842.457479</y>
  </pos>
  <GFX>
-  <space>C01.png</space>
-  <exterior>mining4.png</exterior>
+  <space>J06.png</space>
+  <exterior>aquatic3.png</exterior>
  </GFX>
  <general>
-  <class>D</class>
+  <class>J</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>
