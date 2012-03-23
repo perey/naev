@@ -16,9 +16,14 @@
   <asset>Castellan III</asset>
   <asset>Castellan VI</asset>
   <asset>Dunmer</asset>
+  <asset>Leszec</asset>
  </assets>
  <jumps>
   <jump target="Farizel">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
+  <jump target="Infinity">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

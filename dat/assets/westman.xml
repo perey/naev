@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Roger">
+<asset name="Westman">
  <pos>
-  <x>-19980.874423</x>
-  <y>-8192.233936</y>
+  <x>9939.377758</x>
+  <y>8741.327761</y>
  </pos>
  <GFX>
   <space>000.png</space>
@@ -22,6 +22,6 @@
    <refuel/>
   </services>
   <commodities/>
-  <description>(null)</description>
+  <description>None</description>
  </general>
 </asset>

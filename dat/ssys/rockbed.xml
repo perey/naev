@@ -7,14 +7,18 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>-15.609568</x>
-  <y>112.893519</y>
+  <x>-53.707562</x>
+  <y>109.517747</y>
  </pos>
  <assets>
   <asset>Virtual Pirate Small</asset>
   <asset>Virtual Trader Local</asset>
  </assets>
  <jumps>
+  <jump target="Andres">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
   <jump target="Capricorn">
    <autopos/>
    <hide>1.250000</hide>

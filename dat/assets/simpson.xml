@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Roger">
+<asset name="Simpson">
  <pos>
-  <x>-19980.874423</x>
-  <y>-8192.233936</y>
+  <x>3727.266659</x>
+  <y>4592.524991</y>
  </pos>
  <GFX>
   <space>000.png</space>

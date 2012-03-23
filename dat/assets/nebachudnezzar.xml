@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Roger">
+<asset name="Nebachudnezzar">
  <pos>
-  <x>-19980.874423</x>
-  <y>-8192.233936</y>
+  <x>-11314.916644</x>
+  <y>7853.883318</y>
  </pos>
  <GFX>
-  <space>000.png</space>
-  <exterior>station00.png</exterior>
+  <space>001.png</space>
+  <exterior>station01.png</exterior>
  </GFX>
  <presence>
   <faction>Pirate</faction>
@@ -15,8 +15,8 @@
  </presence>
  <general>
   <class>A</class>
-  <population>500</population>
-  <hide>1.250000</hide>
+  <population>320</population>
+  <hide>0.250000</hide>
   <services>
    <land/>
    <refuel/>

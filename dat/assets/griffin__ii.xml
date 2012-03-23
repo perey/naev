@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Griffin  II">
+ <pos>
+  <x>2273.605614</x>
+  <y>-1007.519351</y>
+ </pos>
+ <GFX>
+  <space>moon-A01.png</space>
+  <exterior>snow.png</exterior>
+ </GFX>
+ <general>
+  <class>A</class>
+  <population>0</population>
+  <hide>0.500000</hide>
+  <services/>
+ </general>
+</asset>
