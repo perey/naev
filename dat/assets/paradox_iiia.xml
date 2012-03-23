@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Tandar Ia">
+<asset name="Paradox III-a">
  <pos>
-  <x>10681.332054</x>
-  <y>-4812.595335</y>
+  <x>-2287.495147</x>
+  <y>1703.812940</y>
  </pos>
  <GFX>
-  <space>moon-D02.png</space>
-  <exterior>station04.png</exterior>
+  <space>moon-P01.png</space>
+  <exterior>station01.png</exterior>
  </GFX>
  <general>
   <class>A</class>
   <population>0</population>
-  <hide>0.500000</hide>
+  <hide>0.250000</hide>
   <services/>
  </general>
 </asset>

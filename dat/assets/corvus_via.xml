@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Tandar Ia">
+<asset name="Corvus VI-a">
  <pos>
-  <x>10681.332054</x>
-  <y>-4812.595335</y>
+  <x>-20337.977201</x>
+  <y>18801.072019</y>
  </pos>
  <GFX>
-  <space>moon-D02.png</space>
-  <exterior>station04.png</exterior>
+  <space>moon-A00.png</space>
+  <exterior>aquatic2.png</exterior>
  </GFX>
  <general>
   <class>A</class>

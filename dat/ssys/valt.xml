@@ -13,8 +13,14 @@
  <assets>
   <asset>Valt I</asset>
   <asset>Valt II</asset>
+  <asset>Valt IV</asset>
+  <asset>Vault</asset>
  </assets>
  <jumps>
+  <jump target="Capricorn">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
   <jump target="Kelvos">
    <autopos/>
    <hide>1.250000</hide>
