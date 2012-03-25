@@ -7,8 +7,8 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>928.643219</x>
-  <y>-52.262920</y>
+  <x>890.448775</x>
+  <y>-70.202735</y>
  </pos>
  <assets>
   <asset>Jezza</asset>
@@ -16,5 +16,10 @@
   <asset>Old King Cole</asset>
   <asset>Sanchez</asset>
  </assets>
- <jumps/>
+ <jumps>
+  <jump target="Penn">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
+ </jumps>
 </ssys>

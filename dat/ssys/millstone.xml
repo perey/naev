@@ -10,7 +10,11 @@
   <x>547.560041</x>
   <y>-789.406902</y>
  </pos>
- <assets/>
+ <assets>
+  <asset>Marauder Station</asset>
+  <asset>Omar</asset>
+  <asset>Sternguard</asset>
+ </assets>
  <jumps>
   <jump target="Druid">
    <autopos/>

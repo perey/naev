@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <asset name="Roger">
  <pos>
-  <x>-48121.355425</x>
-  <y>-14721.638371</y>
+  <x>-19980.874423</x>
+  <y>-8192.233936</y>
  </pos>
  <GFX>
-  <space>K02.png</space>
+  <space>000.png</space>
   <exterior>station00.png</exterior>
  </GFX>
+ <presence>
+  <faction>Pirate</faction>
+  <value>15.000000</value>
+  <range>0</range>
+ </presence>
  <general>
-  <class>D</class>
-  <population>0</population>
-  <hide>0.250000</hide>
-  <services/>
+  <class>A</class>
+  <population>500</population>
+  <hide>1.250000</hide>
+  <services>
+   <land/>
+   <refuel/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
  </general>
 </asset>
