@@ -18,10 +18,6 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Andres">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Gamel">
    <autopos/>
    <hide>1.250000</hide>

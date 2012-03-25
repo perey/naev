@@ -14,15 +14,7 @@
   <asset>Fang</asset>
  </assets>
  <jumps>
-  <jump target="Coriolis">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Gamel">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
-  <jump target="Rockbed">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

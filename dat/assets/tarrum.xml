@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Corvus I">
+<asset name="Tarrum">
  <pos>
-  <x>2251.356163</x>
-  <y>-1379.659409</y>
+  <x>-979.392945</x>
+  <y>10377.298010</y>
  </pos>
  <GFX>
-  <space>moon-D02.png</space>
-  <exterior>station04.png</exterior>
+  <space>moon-J01.png</space>
+  <exterior>mining6.png</exterior>
  </GFX>
  <general>
   <class>A</class>

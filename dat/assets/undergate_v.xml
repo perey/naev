@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Corvus I">
+<asset name="Undergate V">
  <pos>
-  <x>2251.356163</x>
-  <y>-1379.659409</y>
+  <x>-8733.535288</x>
+  <y>-14793.696020</y>
  </pos>
  <GFX>
-  <space>moon-D02.png</space>
-  <exterior>station04.png</exterior>
+  <space>moon-P01.png</space>
+  <exterior>station03.png</exterior>
  </GFX>
  <general>
   <class>A</class>
