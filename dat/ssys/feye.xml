@@ -26,10 +26,6 @@
    <autopos/>
    <hide>0.000000</hide>
   </jump>
-  <jump target="Mizar">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Pisces Prime">
    <autopos/>
    <hide>0.000000</hide>

@@ -22,10 +22,6 @@
   <asset>Virtual Civilian Standard</asset>
  </assets>
  <jumps>
-  <jump target="Mizar">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
   <jump target="Point Zero">
    <autopos/>
    <hide>1.250000</hide>
