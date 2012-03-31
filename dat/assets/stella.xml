@@ -11,7 +11,7 @@
  <presence>
   <faction>Empire</faction>
   <value>100.000000</value>
-  <range>0</range>
+  <range>1</range>
  </presence>
  <general>
   <class>K</class>
@@ -24,7 +24,7 @@
    <missions/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>As a resource for many common building materials, Stella is a busy yet fairly squalid world. Planets like these crop up in most interplanetary economies, a sad but inevitable phenomenon. Life here is rough and unforgiving, and nobody comes here because they like to.</description>
+  <bar>It's not much fun living on a world like Stella. Few people can stay cheerful after living here for any appreciable amount of time. This spaceport bar attempts to lift spirits with a plaque over the bar that reads "A better tomorrow for all". It doesn't help any.</bar>
  </general>
 </asset>
