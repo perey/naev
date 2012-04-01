@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Dolmen">
+<asset name="Cristen">
  <pos>
-  <x>-4074.386855</x>
-  <y>-3544.385313</y>
+  <x>10673.259801</x>
+  <y>3373.708793</y>
  </pos>
  <GFX>
-  <space>M09.png</space>
-  <exterior>oceanic2.png</exterior>
+  <space>G03.png</space>
+  <exterior>snow.png</exterior>
  </GFX>
  <presence>
-  <faction>Empire</faction>
-  <value>250.000000</value>
+  <faction>Dvaered</faction>
+  <value>100.000000</value>
   <range>5</range>
  </presence>
  <general>
-  <class>M</class>
-  <population>9800000</population>
+  <class>A</class>
+  <population>123456</population>
   <hide>0.250000</hide>
   <services>
    <land/>
@@ -23,8 +23,6 @@
    <bar/>
    <missions/>
    <commodity/>
-   <outfits/>
-   <shipyard/>
   </services>
   <commodities/>
   <description>(null)</description>

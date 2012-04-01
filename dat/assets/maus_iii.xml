@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Jezza">
+<asset name="Maus III">
  <pos>
-  <x>18148.644587</x>
-  <y>14760.930450</y>
+  <x>10669.670581</x>
+  <y>1287.718863</y>
  </pos>
  <GFX>
-  <space>K03.png</space>
-  <exterior>oceanic.png</exterior>
+  <space>Y00.png</space>
+  <exterior>methane.png</exterior>
  </GFX>
  <general>
-  <class>X</class>
+  <class>K</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

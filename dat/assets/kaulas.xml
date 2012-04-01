@@ -1,30 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Dolmen">
+<asset name="Kaulas">
  <pos>
-  <x>-4074.386855</x>
-  <y>-3544.385313</y>
+  <x>-4695.812903</x>
+  <y>1753.499755</y>
  </pos>
  <GFX>
-  <space>M09.png</space>
-  <exterior>oceanic2.png</exterior>
+  <space>A03.png</space>
+  <exterior>lava.png</exterior>
  </GFX>
  <presence>
-  <faction>Empire</faction>
-  <value>250.000000</value>
+  <faction>Soromid</faction>
+  <value>100.000000</value>
   <range>5</range>
  </presence>
  <general>
-  <class>M</class>
-  <population>9800000</population>
+  <class>A</class>
+  <population>142345</population>
   <hide>0.250000</hide>
   <services>
    <land/>
    <refuel/>
    <bar/>
    <missions/>
-   <commodity/>
-   <outfits/>
-   <shipyard/>
   </services>
   <commodities/>
   <description>(null)</description>

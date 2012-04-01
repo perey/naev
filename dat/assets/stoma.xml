@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Jezza">
+<asset name="Stoma">
  <pos>
-  <x>18148.644587</x>
-  <y>14760.930450</y>
+  <x>976.188887</x>
+  <y>-6877.694431</y>
  </pos>
  <GFX>
-  <space>K03.png</space>
-  <exterior>oceanic.png</exterior>
+  <space>Y00.png</space>
+  <exterior>lava.png</exterior>
  </GFX>
  <general>
-  <class>X</class>
+  <class>A</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

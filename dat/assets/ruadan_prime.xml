@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Jezza">
+<asset name="Ruadan Prime">
  <pos>
-  <x>18148.644587</x>
-  <y>14760.930450</y>
+  <x>-1913.038512</x>
+  <y>783.190263</y>
  </pos>
  <GFX>
-  <space>K03.png</space>
-  <exterior>oceanic.png</exterior>
+  <space>M09.png</space>
+  <exterior>traderoom.png</exterior>
  </GFX>
  <general>
-  <class>X</class>
+  <class>A</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>
