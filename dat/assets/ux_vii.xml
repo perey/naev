@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Griffin VI">
+<asset name="UX VII">
  <pos>
-  <x>3757.367071</x>
-  <y>-16242.025363</y>
+  <x>-7533.875175</x>
+  <y>-3032.160629</y>
  </pos>
  <GFX>
-  <space>J05.png</space>
-  <exterior>station03.png</exterior>
+  <space>O02.png</space>
+  <exterior>station04.png</exterior>
  </GFX>
  <general>
-  <class>J</class>
+  <class>I</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

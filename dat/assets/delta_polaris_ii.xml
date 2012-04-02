@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Griffin  II">
+<asset name="Delta Polaris II">
  <pos>
-  <x>16170.985587</x>
-  <y>-8163.871337</y>
+  <x>-846.400307</x>
+  <y>10970.128986</y>
  </pos>
  <GFX>
-  <space>moon-A01.png</space>
-  <exterior>snow.png</exterior>
+  <space>moon-J01.png</space>
+  <exterior>lava.png</exterior>
  </GFX>
  <general>
   <class>A</class>

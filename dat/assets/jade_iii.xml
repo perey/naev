@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Griffin VI">
+<asset name="Jade III">
  <pos>
-  <x>3757.367071</x>
-  <y>-16242.025363</y>
+  <x>13362.250974</x>
+  <y>8050.895984</y>
  </pos>
  <GFX>
-  <space>J05.png</space>
-  <exterior>station03.png</exterior>
+  <space>I05.png</space>
+  <exterior>traderoom.png</exterior>
  </GFX>
  <general>
-  <class>J</class>
+  <class>I</class>
   <population>0</population>
   <hide>0.250000</hide>
   <services/>

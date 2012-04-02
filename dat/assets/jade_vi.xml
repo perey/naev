@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Griffin  II">
+<asset name="Jade VI">
  <pos>
-  <x>16170.985587</x>
-  <y>-8163.871337</y>
+  <x>15886.179946</x>
+  <y>-11744.772546</y>
  </pos>
  <GFX>
-  <space>moon-A01.png</space>
-  <exterior>snow.png</exterior>
+  <space>D00.png</space>
+  <exterior>desertic4.png</exterior>
  </GFX>
  <general>
   <class>A</class>
   <population>0</population>
-  <hide>0.500000</hide>
+  <hide>0.250000</hide>
   <services/>
  </general>
 </asset>

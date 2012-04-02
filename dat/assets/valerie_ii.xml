@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Griffin  II">
+<asset name="Valerie II">
  <pos>
-  <x>16170.985587</x>
-  <y>-8163.871337</y>
+  <x>3096.349126</x>
+  <y>4021.694842</y>
  </pos>
  <GFX>
-  <space>moon-A01.png</space>
-  <exterior>snow.png</exterior>
+  <space>J04.png</space>
+  <exterior>station03.png</exterior>
  </GFX>
  <general>
   <class>A</class>
   <population>0</population>
-  <hide>0.500000</hide>
+  <hide>0.250000</hide>
   <services/>
  </general>
 </asset>
