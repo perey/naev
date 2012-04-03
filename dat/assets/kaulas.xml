@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Kaulas">
+ <pos>
+  <x>-4695.812903</x>
+  <y>1753.499755</y>
+ </pos>
+ <GFX>
+  <space>A03.png</space>
+  <exterior>lava.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Soromid</faction>
+  <value>100.000000</value>
+  <range>5</range>
+ </presence>
+ <general>
+  <class>A</class>
+  <population>142345</population>
+  <hide>0.250000</hide>
+  <services>
+   <land/>
+   <refuel/>
+   <bar/>
+   <missions/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
+  <bar>(null)</bar>
+ </general>
+</asset>

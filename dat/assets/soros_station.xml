@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Soros Station">
+ <pos>
+  <x>-11638.001887</x>
+  <y>-5124.991657</y>
+ </pos>
+ <GFX>
+  <space>000.png</space>
+  <exterior>station00.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Empire</faction>
+  <value>50.000000</value>
+  <range>5</range>
+ </presence>
+ <general>
+  <class>0</class>
+  <population>9500</population>
+  <hide>0.750000</hide>
+  <services>
+   <land/>
+   <refuel/>
+   <bar/>
+   <missions/>
+   <shipyard/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
+  <bar>(null)</bar>
+ </general>
+ <tech>
+  <item>Light Civilian Combat Ships</item>
+  <item>Basic Trade Ships</item>
+ </tech>
+</asset>

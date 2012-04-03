@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<asset name="Megas">
+ <pos>
+  <x>2803.400303</x>
+  <y>3353.434540</y>
+ </pos>
+ <GFX>
+  <space>K02.png</space>
+  <exterior>mining.png</exterior>
+ </GFX>
+ <presence>
+  <faction>Dvaered</faction>
+  <value>100.000000</value>
+  <range>5</range>
+ </presence>
+ <general>
+  <class>J</class>
+  <population>654321</population>
+  <hide>0.250000</hide>
+  <services>
+   <land/>
+   <refuel/>
+   <bar/>
+   <missions/>
+  </services>
+  <commodities/>
+  <description>(null)</description>
+  <bar>(null)</bar>
+ </general>
+</asset>
