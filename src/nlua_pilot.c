@@ -27,6 +27,7 @@
 #include "log.h"
 #include "rng.h"
 #include "pilot.h"
+#include "pilot_heat.h"
 #include "player.h"
 #include "space.h"
 #include "ai.h"
@@ -96,12 +97,15 @@ static int pilotL_flags( lua_State *L );
 static int pilotL_setActiveBoard( lua_State *L );
 static int pilotL_setNoDeath( lua_State *L );
 static int pilotL_disable( lua_State *L );
+static int pilotL_cooldown( lua_State *L );
+static int pilotL_setCooldown( lua_State *L );
 static int pilotL_setNoJump( lua_State *L );
 static int pilotL_setNoLand( lua_State *L );
 static int pilotL_addOutfit( lua_State *L );
 static int pilotL_rmOutfit( lua_State *L );
 static int pilotL_setFuel( lua_State *L );
 static int pilotL_changeAI( lua_State *L );
+static int pilotL_setTemp( lua_State *L );
 static int pilotL_setHealth( lua_State *L );
 static int pilotL_setEnergy( lua_State *L );
 static int pilotL_setNoboard( lua_State *L );
@@ -154,6 +158,7 @@ static const luaL_reg pilotL_methods[] = {
    { "vel", pilotL_velocity },
    { "dir", pilotL_dir },
    { "temp", pilotL_temp },
+   { "cooldown", pilotL_cooldown },
    { "faction", pilotL_faction },
    { "health", pilotL_getHealth },
    { "energy", pilotL_getEnergy },
@@ -167,6 +172,7 @@ static const luaL_reg pilotL_methods[] = {
    { "toggleSpawn", pilotL_toggleSpawn },
    /* Modify. */
    { "changeAI", pilotL_changeAI },
+   { "setTemp", pilotL_setTemp },
    { "setHealth", pilotL_setHealth },
    { "setEnergy", pilotL_setEnergy },
    { "setNoboard", pilotL_setNoboard },
@@ -186,6 +192,7 @@ static const luaL_reg pilotL_methods[] = {
    { "setActiveBoard", pilotL_setActiveBoard },
    { "setNoDeath", pilotL_setNoDeath },
    { "disable", pilotL_disable },
+   { "setCooldown", pilotL_setCooldown },
    { "setNoJump", pilotL_setNoJump },
    { "setNoLand", pilotL_setNoLand },
    /* Talk. */
@@ -241,6 +248,7 @@ static const luaL_reg pilotL_cond_methods[] = {
    { "vel", pilotL_velocity },
    { "dir", pilotL_dir },
    { "temp", pilotL_temp },
+   { "cooldown", pilotL_cooldown },
    { "faction", pilotL_faction },
    { "health", pilotL_getHealth },
    { "energy", pilotL_getEnergy },
@@ -1557,6 +1565,7 @@ static int pilotL_dir( lua_State *L )
  *
  *    @luaparam p Pilot to get temperature of.
  *    @luareturn The pilot's current temperature (in kelvin).
+ * @luafunc temp( p )
  */
 static int pilotL_temp( lua_State *L )
 {
@@ -2133,6 +2142,61 @@ static int pilotL_disable( lua_State *L )
 
 
 /**
+ * @brief Gets a pilot's cooldown state.
+ *
+ * @usage p:cooldown()
+ *
+ *    @luaparam p Pilot to check the cooldown status of.
+ * @luafunc cooldown( p )
+ */
+static int pilotL_cooldown( lua_State *L )
+{
+   Pilot *p;
+
+   /* Get the pilot. */
+   p = luaL_validpilot(L,1);
+
+   /* Get the cooldown status. */
+   lua_pushboolean( L, pilot_isFlag(p, PILOT_COOLDOWN) );
+
+   return 1;
+}
+
+
+/**
+ * @brief Starts or stops a pilot's cooldown mode.
+ *
+ * @usage p:setCooldown( true )
+ *
+ *    @luaparam p Pilot to modify the cooldown status of.
+ *    @luaparam state Whether to enable or disable cooldown (defaults to true).
+ * @luafunc setCooldown( p, state )
+ */
+static int pilotL_setCooldown( lua_State *L )
+{
+   Pilot *p;
+   int state;
+
+   /* Get the pilot. */
+   p = luaL_validpilot(L,1);
+
+  /* Get state. */
+  if (lua_gettop(L) > 1)
+     state = lua_toboolean(L, 2);
+  else
+     state = 1;
+
+   /* Set status. */
+   if (state)
+      pilot_cooldown( p );
+   else
+      pilot_cooldownEnd( p );
+
+   return 0;
+}
+
+
+/**
  * @brief Enables or disables a pilot's hyperspace engine.
  *
  * @usage p:setNoJump( true )
@@ -2410,6 +2474,49 @@ static int pilotL_changeAI( lua_State *L )
    ret = ai_pinit( p, str );
    lua_pushboolean(L, ret);
    return 1;
+}
+
+
+/**
+ * @brief Sets the temperature of a pilot.
+ *
+ * All temperatures are in Kelvins. Note that temperatures cannot go below the base temperature of the Naev galaxy, which is 250K.
+ *
+ * @usage p:setTemp( 300, true ) -- Sets ship temperature to 300K, as well as all outfits.
+ * @usage p:setTemp( 500, false ) -- Sets ship temperature to 500K, but leaves outfits alone.
+ * @usage p:setTemp( 0 ) -- Sets ship temperature to the base temperature, as well as all outfits.
+ *
+ *    @luaparam p Pilot to set health of.
+ *    @luaparam temp Value to set temperature to. Values below base temperature will be clamped.
+ *    @luaparam slots Whether slots should also be set to this temperature. Defaults to true.
+ * @luafunc setTemp( p, armour, shield, stress )
+ */
+static int pilotL_setTemp( lua_State *L )
+{
+   Pilot *p;
+   int i, setOutfits = 1;
+   double kelvins;
+
+   /* Handle parameters. */
+   p  = luaL_validpilot(L,1);
+   kelvins  = luaL_checknumber(L, 2);
+   if (lua_gettop(L) < 3)
+      setOutfits = 1;
+   else
+      setOutfits = lua_toboolean(L, 3);
+
+   /* Temperature must not go below base temp. */
+   kelvins = MAX(kelvins, CONST_SPACE_STAR_TEMP);
+
+   /* Handle pilot ship. */
+   p->heat_T = kelvins;
+
+   /* Handle pilot outfits (maybe). */
+   if (setOutfits)
+      for (i = 0; i < p->noutfits; i++)
+         p->outfits[i]->heat_T = kelvins;
+
+   return 0;
 }
 
 
