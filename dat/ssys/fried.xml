@@ -27,9 +27,5 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Stone Table">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
  </jumps>
 </ssys>

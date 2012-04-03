@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Kobopos I">
+<asset name="Palin II">
  <pos>
-  <x>-951.955371</x>
-  <y>1935.550028</y>
+  <x>9700.717288</x>
+  <y>-8791.275042</y>
  </pos>
  <GFX>
-  <space>moon-J00.png</space>
-  <exterior>mining5.png</exterior>
+  <space>moon-J01.png</space>
+  <exterior>lava.png</exterior>
  </GFX>
  <general>
-  <class>A</class>
+  <class>J</class>
   <population>0</population>
   <hide>0.500000</hide>
   <services/>

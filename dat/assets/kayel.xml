@@ -9,7 +9,7 @@
   <exterior>oceanic.png</exterior>
  </GFX>
  <presence>
-  <faction>Independent</faction>
+  <faction>Empire</faction>
   <value>100.000000</value>
   <range>5</range>
  </presence>
@@ -24,7 +24,7 @@
    <shipyard/>
   </services>
   <commodities/>
-  <description>Kayel is a small, ioslated little world that keeps away from the larger problems of the galaxy. It maintains a few mining outposts here and there, and sells food, and keeps a respectable shipyard running. The people here ask few questions, and so it's a popular place for a pirate to lay low.</description>
+  <description>Kayel is a small, isolated little world that keeps away from the larger problems of the galaxy. It maintains a few mining outposts here and there, and sells food, and keeps a respectable shipyard running.</description>
   <bar>The bar is mostly a dingy little place with a few groups of people making shady deals. There are a bunch of drunks at scattered parts, and the bartender always keeps a hand under the bar. Not the most relaxing place.</bar>
  </general>
  <tech>
