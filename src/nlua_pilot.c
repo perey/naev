@@ -75,6 +75,7 @@ static int pilotL_rename( lua_State *L );
 static int pilotL_position( lua_State *L );
 static int pilotL_velocity( lua_State *L );
 static int pilotL_dir( lua_State *L );
+static int pilotL_ew( lua_State *L );
 static int pilotL_temp( lua_State *L );
 static int pilotL_faction( lua_State *L );
 static int pilotL_setPosition( lua_State *L );
@@ -157,6 +158,7 @@ static const luaL_reg pilotL_methods[] = {
    { "pos", pilotL_position },
    { "vel", pilotL_velocity },
    { "dir", pilotL_dir },
+   { "ew", pilotL_ew },
    { "temp", pilotL_temp },
    { "cooldown", pilotL_cooldown },
    { "faction", pilotL_faction },
@@ -247,6 +249,7 @@ static const luaL_reg pilotL_cond_methods[] = {
    { "pos", pilotL_position },
    { "vel", pilotL_velocity },
    { "dir", pilotL_dir },
+   { "ew", pilotL_ew },
    { "temp", pilotL_temp },
    { "cooldown", pilotL_cooldown },
    { "faction", pilotL_faction },
@@ -1538,6 +1541,27 @@ static int pilotL_velocity( lua_State *L )
 }
 
 /**
+ * @brief Gets the pilot's evasion.
+ *
+ * @usage d = p:ew()
+ *
+ *    @luaparam p Pilot to get the evasion of.
+ *    @luareturn The pilot's current evasion value.
+ * @luafunc ew( p )
+ */
+static int pilotL_ew( lua_State *L )
+{
+   Pilot *p;
+
+   /* Parse parameters */
+   p     = luaL_validpilot(L,1);
+
+   /* Push direction. */
+   lua_pushnumber( L, p->ew_evasion );
+   return 1;
+}
+
+/**
  * @brief Gets the pilot's direction.
  *
  * @usage d = p:dir()
@@ -2190,7 +2214,7 @@ static int pilotL_setCooldown( lua_State *L )
    if (state)
       pilot_cooldown( p );
    else
-      pilot_cooldownEnd( p );
+      pilot_cooldownEnd(p, NULL);
 
    return 0;
 }
