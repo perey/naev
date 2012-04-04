@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <asset name="Priscus">
  <pos>
-  <x>3371.607781</x>
-  <y>3691.240323</y>
+  <x>2390.165223</x>
+  <y>9970.939191</y>
  </pos>
  <GFX>
   <space>A04.png</space>
@@ -21,6 +21,7 @@
    <land>srm_mil_restricted</land>
    <refuel/>
    <bar/>
+   <commodity/>
    <outfits/>
   </services>
   <commodities/>
