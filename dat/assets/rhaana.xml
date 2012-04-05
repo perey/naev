@@ -9,7 +9,7 @@
   <exterior>desertic4.png</exterior>
  </GFX>
  <presence>
-  <faction>Independent</faction>
+  <faction>Dvaered</faction>
   <value>50.000000</value>
   <range>0</range>
  </presence>
@@ -25,7 +25,7 @@
    <commodity/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>Rhanna is one of the outer worlds of Dvaered control. The populattion is high, but forced to live in insulated containment centers. It is a poor world, with little to reccomend it to the wider galaxy. Thusly, it's very quiet.</description>
+  <bar>The bar is a standard-isse model, seen in most space stations. Other than that, it is as overlarge and dingy as any Dvaered bar.</bar>
  </general>
 </asset>
