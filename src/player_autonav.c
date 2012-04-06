@@ -67,6 +67,11 @@ void player_autonavStart (void)
       return;
    }
 
+   /* Cooldown and autonav are mutually-exclusive. */
+   if ((pilot_isFlag(player.p, PILOT_COOLDOWN)) ||
+         (pilot_isFlag(player.p, PILOT_COOLDOWN_BRAKE)))
+      pilot_cooldownEnd(player.p, NULL);
+
    player_autonavSetup();
    player.autonav = AUTONAV_JUMP_APPROACH;
 }
@@ -199,6 +204,11 @@ void player_autonavAbort( const char *reason )
 {
    /* No point if player is beyond aborting. */
    if ((player.p==NULL) || ((player.p != NULL) && pilot_isFlag(player.p, PILOT_HYPERSPACE)))
+      return;
+
+   /* Cooldown (handled later) may be script-initiated and we don't
+    * want to make it player-abortable while under manual control. */
+   if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
       return;
 
    if (player_isFlag(PLAYER_AUTONAV)) {

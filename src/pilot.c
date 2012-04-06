@@ -664,6 +664,10 @@ void pilot_cooldown( Pilot *p )
    if (p->id == PLAYER_ID)
       player_message("\epActive cooldown engaged.");
 
+   /* Disable active outfits. */
+   if (pilot_outfitOffAll( p ) > 0)
+      pilot_calcStats( p );
+
    /* Calculate the ship's overall heat. */
    heat_capacity = p->heat_C;
    heat_mean = p->heat_T * p->heat_C;
@@ -1231,6 +1235,10 @@ void pilot_updateDisable( Pilot* p, const unsigned int shooter )
        */
       p->dtimer = 20. * pow( p->armour, 0.25 );
       p->dtimer_accum = 0.;
+
+      /* Disable active outfits. */
+      if (pilot_outfitOffAll( p ) > 0)
+         pilot_calcStats( p );
 
       pilot_setFlag( p,PILOT_DISABLED ); /* set as disabled */
       /* Run hook */
@@ -1867,10 +1875,9 @@ static void pilot_hyperspace( Pilot* p, double dt )
       if (!can_hyp) {
          pilot_hyperspaceAbort( p );
 
-         if (p == player.p) {
+         if (pilot_isPlayer(p))
             if (!player_isFlag(PLAYER_AUTONAV))
                player_message( "\erStrayed too far from jump point: jump aborted." );
-         }
       }
       else {
          if (p->ptimer < 0.) { /* engines ready */
@@ -1888,10 +1895,9 @@ static void pilot_hyperspace( Pilot* p, double dt )
       if (!can_hyp) {
          pilot_hyperspaceAbort( p );
 
-         if (p == player.p) {
+         if (pilot_isPlayer(p))
             if (!player_isFlag(PLAYER_AUTONAV))
                player_message( "\erStrayed too far from jump point: jump aborted." );
-         }
       }
       else {
          /* If the ship needs to charge up its hyperdrive, brake. */
@@ -1927,7 +1933,7 @@ static void pilot_hyperspace( Pilot* p, double dt )
       }
    }
 
-   if (p == player.p)
+   if (pilot_isPlayer(p))
       player_updateSpecific( p, dt );
 }
 
