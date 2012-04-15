@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Moor II">
+<asset name="Starlight End II">
  <pos>
-  <x>-8933.793803</x>
-  <y>4029.027222</y>
+  <x>16680.285999</x>
+  <y>4614.918172</y>
  </pos>
  <GFX>
-  <space>H00.png</space>
-  <exterior>aquatic2.png</exterior>
+  <space>J08.png</space>
+  <exterior>station04.png</exterior>
  </GFX>
  <general>
   <class>A</class>

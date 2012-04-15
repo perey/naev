@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Moor II">
+<asset name="Longbow I">
  <pos>
-  <x>-8933.793803</x>
-  <y>4029.027222</y>
+  <x>-1716.135133</x>
+  <y>-6781.358274</y>
  </pos>
  <GFX>
-  <space>H00.png</space>
-  <exterior>aquatic2.png</exterior>
+  <space>G00.png</space>
+  <exterior>station00.png</exterior>
  </GFX>
  <general>
   <class>A</class>
