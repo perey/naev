@@ -11,7 +11,7 @@
  <presence>
   <faction>Dvaered</faction>
   <value>100.000000</value>
-  <range>5</range>
+  <range>2</range>
  </presence>
  <general>
   <class>J</class>
@@ -22,9 +22,16 @@
    <refuel/>
    <bar/>
    <missions/>
+   <commodity/>
+   <outfits/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>Megas is a poor world filled with unskilled laborers. It is a world of little value, but many an aspirant Warlord has started a successful campaign by taking Megas and using it as a base of operation.</description>
+  <bar>The patrons of this bar are all hard-faced, tight-lipped individuals. They will give you the time of day, but most would rather forget their troubles by applying enough alcohol to them.</bar>
  </general>
+ <tech>
+  <item>Basic Outfits 1</item>
+  <item>Missiles 1</item>
+  <item>Star Maps</item>
+ </tech>
 </asset>

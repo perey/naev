@@ -26,7 +26,13 @@
    <outfits/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>Gennus is a cold world now, but it wasn't quite this harsh when it was first settled during the Second Growth. Poor climate management and rampant pollution have filled the sky with sunlight-blocking substances, and now the fragile ecosystem has collapsed. The people here only live on Gennus because they have nowhere else to go.</description>
+  <bar>It's hard to find a smiling face in this spaceport bar. Not too surprising, given how unpleasant life on this planet is.</bar>
  </general>
+ <tech>
+  <item>Laser 1</item>
+  <item>Laser 2</item>
+  <item>Basic Outfits 1</item>
+  <item>Basic Outfits 2</item>
+ </tech>
 </asset>

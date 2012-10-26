@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <asset name="Timu">
  <pos>
-  <x>1051.652989</x>
-  <y>-1115.050510</y>
+  <x>2753.842426</x>
+  <y>-4289.403784</y>
  </pos>
  <GFX>
-  <space>moon-K00.png</space>
+  <space>moon-P03.png</space>
   <exterior>aquatic2.png</exterior>
  </GFX>
  <presence>
   <faction>Dvaered</faction>
   <value>75.000000</value>
-  <range>0</range>
+  <range>1</range>
  </presence>
  <general>
   <class>K</class>
@@ -25,8 +25,8 @@
    <shipyard/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>With no axial tilt, Timu enjoys no seasons, only day and night. This has made the cold, arctic landscape dull and featureless. The Dvaered inhabitants don't really care, of course, as they're here to work, not to enjoy the view.</description>
+  <bar>Run down and depressing, this bar has suffered from crass lack of upkeep over the cycles. The walls are even, graffiti'd, a sight uncommon even in Dvaered bars.</bar>
  </general>
  <tech>
   <item>Kinetic 1</item>

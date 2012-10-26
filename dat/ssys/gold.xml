@@ -10,9 +10,7 @@
   <x>-249.066811</x>
   <y>-853.103906</y>
  </pos>
- <assets>
-  <asset>Roger</asset>
- </assets>
+ <assets/>
  <jumps>
   <jump target="Fried">
    <autopos/>

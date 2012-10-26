@@ -1243,7 +1243,7 @@ void player_weapSetPress( int id, int type, int repeat )
    if (player.p == NULL)
       return;
 
-   if (pilot_isFlag(player.p, PILOT_HYP_PREP) || 
+   if (pilot_isFlag(player.p, PILOT_HYP_PREP) ||
          pilot_isFlag(player.p, PILOT_HYPERSPACE) ||
          pilot_isFlag(player.p, PILOT_LANDING) ||
          pilot_isFlag(player.p, PILOT_TAKEOFF))
@@ -2761,6 +2761,7 @@ int player_save( xmlTextWriterPtr writer )
    if (player.gui != NULL)
       xmlw_elem(writer,"gui","%s",player.gui);
    xmlw_elem(writer,"guiOverride","%d",player.guiOverride);
+   xmlw_elem(writer,"mapOverlay","%d",ovr_isOpen());
 
    /* Time. */
    xmlw_startElem(writer,"time");
@@ -2944,6 +2945,7 @@ static int player_saveShip( xmlTextWriterPtr writer,
 
    xmlw_startElem(writer,"weaponsets");
    xmlw_attr(writer,"autoweap","%d",ship->autoweap);
+   xmlw_attr(writer,"active_set","%d",ship->active_set);
    for (i=0; i<PILOT_WEAPON_SETS; i++) {
       weaps = pilot_weapSetList( ship, i, &n );
       xmlw_startElem(writer,"weaponset");
@@ -3049,6 +3051,8 @@ static Planet* player_parse( xmlNodePtr parent )
       xmlr_ulong(node,"credits",player_creds);
       xmlr_strd(node,"gui",player.gui);
       xmlr_int(node,"guiOverride",player.guiOverride);
+      xmlr_int(node,"mapOverlay",i);
+      ovr_setOpen(i);
 
       /* Time. */
       if (xml_isNode(node,"time")) {
@@ -3177,7 +3181,7 @@ static Planet* player_parse( xmlNodePtr parent )
                !planet_hasService(pnt, PLANET_SERVICE_REFUEL) ||
                areEnemies(pnt->faction, FACTION_PLAYER)) {
             WARN("Planet '%s' found, but is not suitable. Trying again.", planet);
-            pnt = planet_get( space_getRndPlanet( (i>100) ? 1 : 0  ) ); /* We try landable only for the first 100 tries. */
+            pnt = planet_get( space_getRndPlanet( (i>100) ? 1 : 0 ) ); /* We try landable only for the first 100 tries. */
          }
          else
             hunting = 0;
@@ -3412,7 +3416,7 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
    Commodity *com;
    PilotFlags flags;
    unsigned int pid;
-   int autoweap, level, weapid;
+   int autoweap, level, weapid, active_set;
 
    xmlr_attr(parent,"name",name);
    xmlr_attr(parent,"model",model);
@@ -3589,6 +3593,17 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
          free(id);
       }
 
+      /* Load the last weaponset the player used on this ship. */
+      xmlr_attr(node,"active_set",id);
+      if (id != NULL) {
+         active_set = atoi(id);
+         free(id);
+      }
+      else {
+         /* set active_set to invalid. will be dealt with later */
+         active_set = -1;
+      }
+
       /* Parse weapon sets. */
       cur = node->xmlChildrenNode;
       do { /* Load each weapon set. */
@@ -3674,7 +3689,10 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
    if (autoweap)
       pilot_weaponAuto( ship );
    pilot_weaponSane( ship );
-   pilot_weaponSetDefault( ship );
+   if (active_set >= 0 && active_set < PILOT_WEAPON_SETS)
+      ship->active_set = active_set;
+   else
+      pilot_weaponSetDefault( ship );
 
    return 0;
 }

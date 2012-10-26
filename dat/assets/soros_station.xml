@@ -25,8 +25,8 @@
    <shipyard/>
   </services>
   <commodities/>
-  <description>(null)</description>
-  <bar>(null)</bar>
+  <description>Soros Station is a small but industrious ship making plant that focuses on light, affordable craft.</description>
+  <bar>There are often more pilots in this bar than there are ships docked with the station. Someone needs to transport the finished products to the retail outlets, and what better way to do this than combine the trip with the ship's test run?</bar>
  </general>
  <tech>
   <item>Light Civilian Combat Ships</item>
