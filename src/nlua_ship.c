@@ -27,6 +27,7 @@ static int shipL_get( lua_State *L );
 static int shipL_name( lua_State *L );
 static int shipL_baseType( lua_State *L );
 static int shipL_class( lua_State *L );
+static int shipL_crew( lua_State *L );
 static int shipL_slots( lua_State *L );
 static int shipL_CPU( lua_State *L );
 static int shipL_outfitCPU( lua_State *L );
@@ -39,6 +40,7 @@ static const luaL_reg shipL_methods[] = {
    { "name", shipL_name },
    { "baseType", shipL_baseType },
    { "class", shipL_class },
+   { "crew", shipL_crew },
    { "slots", shipL_slots },
    { "cpu", shipL_CPU },
    { "outfitCPU", shipL_outfitCPU },
@@ -296,6 +298,28 @@ static int shipL_class( lua_State *L )
    s  = luaL_validship(L,1);
 
    lua_pushstring(L, ship_class(s));
+   return 1;
+}
+
+
+/**
+ * @brief Gets the ship's crew complement.
+ *
+ * @usage crew = s:crew()
+ *
+ *    @luaparam s Ship to get crew complement of.
+ *    @luareturn The number of crew on the ship.
+ * @luafunc crew( s )
+ */
+static int shipL_class( lua_State *L )
+{
+   Ship *s;
+
+   /* Get the ship. */
+   s  = luaL_validship(L,1);
+
+   /* Push crew count. */
+   lua_pushnumber(L, s->crew);
    return 1;
 }
 
