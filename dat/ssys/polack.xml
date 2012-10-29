@@ -16,6 +16,15 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
+  <jump target="Nive">
+   <autopos/>
+   <hide>1.250000</hide>
+  </jump>
+  <jump target="Merisi">
+   <autopos/>
+   <exitonly/>
+   <hide>1.250000</hide>
+  </jump>
   <jump target="Fortitude">
    <autopos/>
    <hide>1.250000</hide>

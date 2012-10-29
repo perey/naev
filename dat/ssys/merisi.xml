@@ -8,7 +8,7 @@
  </general>
  <pos>
   <x>-73.000000</x>
-  <y>-60.000000</y>
+  <y>-111.000000</y>
  </pos>
  <assets>
   <asset>Merisi I</asset>
@@ -21,7 +21,7 @@
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Knave">
+  <jump target="Polack">
    <autopos/>
    <hide>1.250000</hide>
   </jump>
