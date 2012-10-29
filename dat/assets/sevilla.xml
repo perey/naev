@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Sevlow">
+<asset name="Sevilla">
  <pos>
   <x>313.213689</x>
   <y>-331.962182</y>
@@ -21,6 +21,6 @@
    <refuel/>
   </services>
   <commodities/>
-  <description>Sevlow is one of the few truly inhabited Thurian worlds. Sevlow is an uneventful planet, as it serves primarily as an argicultural world producing algae, and as a living place for biological Thurions.</description>
+  <description>Sevilla is one of the few truly inhabited Thurian worlds. Sevilla is an uneventful planet, as it serves primarily as an argicultural world producing algae, and as a living place for biological Thurions.</description>
  </general>
 </asset>

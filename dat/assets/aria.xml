@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Onasan">
+<asset name="Aria">
  <pos>
-  <x>8260.183641</x>
-  <y>-6474.142481</y>
+  <x>4306.643204</x>
+  <y>3690.012035</y>
  </pos>
  <GFX>
-  <space>J04.png</space>
-  <exterior>station03.png</exterior>
+  <space>C00.png</space>
+  <exterior>station00.png</exterior>
  </GFX>
  <general>
   <class>A</class>

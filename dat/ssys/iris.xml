@@ -11,12 +11,12 @@
   <y>147.733333</y>
  </pos>
  <assets>
-  <asset>Aluben</asset>
-  <asset>Tenal-P</asset>
+  <asset>Alboin</asset>
+  <asset>Tenali</asset>
   <asset>Virtual Trader Local</asset>
  </assets>
  <jumps>
-  <jump target="Midoros">
+  <jump target="Mirabilis">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

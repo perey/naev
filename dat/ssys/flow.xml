@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ssys name="Vean">
+<ssys name="Flow">
  <general>
   <radius>10000.000000</radius>
   <stars>400</stars>
@@ -7,26 +7,22 @@
   <nebula volatility="0.000000">0.000000</nebula>
  </general>
  <pos>
-  <x>832.000000</x>
-  <y>424.000000</y>
+  <x>821.000000</x>
+  <y>489.000000</y>
  </pos>
  <assets>
-  <asset>HS-24</asset>
-  <asset>NS-63</asset>
-  <asset>SY-19</asset>
-  <asset>Vean I</asset>
-  <asset>Vean II</asset>
+  <asset>HS-54</asset>
+  <asset>Kaira</asset>
+  <asset>NS-27</asset>
+  <asset>Nagano</asset>
+  <asset>Sevilla</asset>
  </assets>
  <jumps>
-  <jump target="Aesria">
+  <jump target="Esria">
    <autopos/>
    <hide>1.250000</hide>
   </jump>
-  <jump target="Flow">
-   <autopos/>
-   <hide>1.250000</hide>
-  </jump>
-  <jump target="Nava">
+  <jump target="Vean">
    <autopos/>
    <hide>1.250000</hide>
   </jump>

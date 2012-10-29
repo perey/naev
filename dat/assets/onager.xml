@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<asset name="Nasano">
+<asset name="Onager">
  <pos>
-  <x>2139.919296</x>
-  <y>-2416.975071</y>
+  <x>8260.183641</x>
+  <y>-6474.142481</y>
  </pos>
  <GFX>
-  <space>P03.png</space>
+  <space>J04.png</space>
   <exterior>station03.png</exterior>
  </GFX>
  <general>
