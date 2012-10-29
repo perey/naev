@@ -2,8 +2,8 @@
 -- This is the third mission in the Academy Hack minor campaign.
 --]]
 
-include "scripts/fleethelper.lua"
-include "scripts/proximity.lua"
+include "fleethelper.lua"
+include "proximity.lua"
 
 -- localization stuff, translators would work here
 lang = naev.lang()
@@ -120,9 +120,9 @@ end
 
 -- Date hook.
 function date()
-   if (harja == nil or not harja:exists()) and system.cur():hasPresence("Sirius") then
+   if (harja == nil or not harja:exists()) and system.cur():presences()["Sirius"] then
       -- Determine spawn point. The reason why we don't use the normal random is that we don't want Harja spawning from the same place as the player.
-      local spawnpoints = _mergeTables(system.cur():adjacentSystems(), system.cur():planets()) -- _mergeTables() is defined in scripts/fleethelper.lua.
+      local spawnpoints = _mergeTables(system.cur():adjacentSystems(), system.cur():planets()) -- _mergeTables() is defined in fleethelper.lua.
       for i, j in ipairs(spawnpoints) do
          if j == origin then
             table.remove(spawnpoints, i) -- The place the player entered from is not a valid spawn point.
@@ -155,7 +155,9 @@ end
 -- Triggers when Harja leaves the system.
 function leave()
    player.msg(leavetext)
-   misn.osdActive(1)
+   if not harjatalked then
+      misn.osdActive(1)
+   end
 end
 
 -- Harja's hail hook.
@@ -203,9 +205,10 @@ end
 function land()
    origin = planet.cur()
    if planet.cur() == destplanet and harjatalked then
-      player.landwindow("bar")
+      player.landWindow("bar")
       tk.msg(title5, text7:format(player.name()))
       player.pay(150000) -- 150K
+      var.pop("achack03repeat")
       misn.finish(true)
    end
 end

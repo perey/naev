@@ -19,7 +19,7 @@ Make comm chatter appear during the battle
 Add some consequences if the player aborts the mission
 ]]--
 
-include "scripts/numstring.lua"
+include "numstring.lua"
 
 -- localization stuff, translators would work here
 lang = naev.lang()
@@ -68,10 +68,10 @@ Into the confusion steps a steely-haired, upright, uniformed figure. Her stripes
    text[3] = [["That was good flying," the Commodore says with a tight smile. "Thank you all for your help. This gentleman has arranged a transfer of forty thousand credits to each of you. You can be proud of what you've done today."]]
 
 -- Other text for the mission
-   comm[8] = "You fled battle. The Empire wont forget."
+   comm[8] = "You fled from the battle. The Empire won't forget."
    comm[9] = "Comm Trader>You're a coward, %s. You better hope I never see you again."
    comm[10] = "Comm Trader>You're running away now, %s? The fight's finished, you know..."
-   title[4] = "Good job"
+   title[4] = "Good job!"
    text[4] = [[The debris from the battle disappears behind you in a blur of light. A moment after you emerge from hyperspace, a Imperial ship jumps in behind you and hails you.
 
 "Please hold course and confirm your identity, %s."  You send your license code and wait for a moment. "Ok, that's fine. We're just making sure no pirates escaped. You were part of the battle, weren't you?  Surprised you didn't return for the bounty, pilot. Listen, I appreciate what you did back there. I have family on %s. When I'm not flying overhead, it's good to know there are good samaritans like you who will step up. Thanks."
@@ -93,9 +93,9 @@ end
 function create()
 
       this_planet, this_system = planet.cur()
-      if ( this_system:hasPresence( "Pirate") or 
-           this_system:hasPresence( "Collective") or 
-           this_system:hasPresence( "FLF") ) 
+      if ( this_system:presences()["Pirate"] or 
+           this_system:presences()["Collective"] or 
+           this_system:presences()["FLF"] ) 
          then misn.finish(false) 
       end
 

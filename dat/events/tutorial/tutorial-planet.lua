@@ -17,16 +17,16 @@ To access the more interesting facilities on Paul 2, you will need to click on t
 Select any tab now to view a short explanation on what you can do there. Once you have seen enough, press the takeoff button to end this tutorial.]]
     message3 = [[This is the outfit seller. Here you may buy and sell things such as weapons, ship upgrades and ammunition. Note that you need to visit the equipment facility to actually install most outfits into your ship.
 
-A particular item of interest that most outfit sellers will carry is the star map. Buying a star map will give you information about surrounding systems, so it's a useful item when you're just starting out.]]
+A particular item of interest that most outfit sellers will carry is the star map. Buying a star map will give you information on remote systems and their jump points, so it's a useful item when you're just starting out.]]
     message4 = [[This is the spaceport bar. Here you may find people who are interested in giving you missions. You will also see a news feed on the right of the screen. You can approach patrons by clicking on their portrait and then clicking on the "approach" button.
 
 There are no mission givers here at the moment. Missions are explained in more detail in another tutorial.]]
     message5 = [[This is the mission computer. This is where you can find work if you're in need of credits. Most missions here will initially involve ferrying passengers or cargo, but you may be able to unlock more mission types during the course of the game.
 
 There is no work available right now. Missions are explained in more detail in another tutorial.]]
-    message6 = [[This is the equipment screen, where you can customize your ship, as well as switch to another ship if you own more than one.
+    message6a = [[This is the equipment screen, where you can customize your ship, as well as switch to another ship if you own more than one.
 
-You have been given a modest selection of equipment. Try installing it in your ship by right-clicking the item boxes in the inventory panel. Be careful, however, of the following:
+You have been given a modest selection of equipment. Try installing it in your ship by right-clicking the item boxes in the inventory panel. You can uninstall them again by right-clicking on the ship slots they are installed in. Be careful, however, of the following:
 
 - Each outfit is either a Structure, Utility or Weapon outfit, and can ONLY be installed in an appropriate slot.
 
@@ -35,6 +35,12 @@ You have been given a modest selection of equipment. Try installing it in your s
 - Each outfit uses up a certain amount of CPU. Your CPU capacity is shown as a green vertical bar that turns red as CPU is used up. You can ONLY install an outfit if you have enough CPU available.
 
 - Each outfit has a certain mass that will be added to your ship's mass when installed. The more massive your ship is, the slower it will become.]]
+    message6b = [[If you look at your ship's slots on the right hand side of the menu, you will see that three of them are different than the others. This is because these three slots are your ship's "core" slots.
+
+Core slots are special slots that can only contain their corresponding core outfits. Engine slots can only hold engines, system slots can only hold systems and hull slots can only hold hull mods. The important thing to know is that if even one of these slots is empty, your ship can't take off!
+
+Core outfits can be found in the Core tab of the equipment browser.]]
+
     message7 = [[This is the shipyard. You can buy new ships and sell ships you currently own here.
 
 There are no ships for sale here, but generally you will always find at least a modest selection of ships in any shipyard you encounter.]]
@@ -51,13 +57,15 @@ function create()
     
     tk.msg(title1, message1)
     
-    player.pilot():rmOutfit("all")
     player.pay(-player.credits())
     player.addOutfit("Laser Cannon MK1", 2)
     player.addOutfit("Plasma Blaster MK1", 1)
     player.addOutfit("Engine Reroute", 1)
-    player.addOutfit("Fuel Pod", 1)
+    player.addOutfit("Unicorp Scrambler", 1)
     player.addOutfit("Cargo Pod", 1)
+    player.addOutfit("Milspec Orion 2302 Core System")
+    player.addOutfit("Tricon Naga Mk5 Engine")
+    player.addOutfit("Schafer & Kane Light Stealth Plating")
     player.pilot():control()
     player.pilot():land(planet.get("Paul 2"))
     
@@ -93,7 +101,8 @@ function mission()
 end
 
 function equipment()
-    tk.msg(title1, message6)
+    tk.msg(title1, message6a)
+    tk.msg(title1, message6b)
     hook.rm(equipmentland)
 end
 

@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include "nstring.h"
 #include <math.h>
 
 #include <lua.h>
@@ -51,6 +51,7 @@ static int hook_input( lua_State *L );
 static int hook_mouse( lua_State *L );
 static int hook_safe( lua_State *L );
 static int hook_standing( lua_State *L );
+static int hook_discover( lua_State *L );
 static int hook_pilot( lua_State *L );
 static const luaL_reg hook_methods[] = {
    { "rm", hookL_rm },
@@ -70,6 +71,7 @@ static const luaL_reg hook_methods[] = {
    { "mouse", hook_mouse },
    { "safe", hook_safe },
    { "standing", hook_standing },
+   { "discover", hook_discover },
    { "pilot", hook_pilot },
    {0,0}
 }; /**< Hook Lua methods. */
@@ -560,6 +562,27 @@ static int hook_standing( lua_State *L )
    return 1;
 }
 /**
+ * @brief Hooks the function to when the player discovers an asset, jump point or the likes.
+ *
+ * The parameters passed to the function are the type which can be one of:<br/>
+ * - "asset" <br/>
+ * - "jump" <br/>
+ * and the actual asset or jump point discovered with the following format: <br/>
+ * function f( type, discovery )
+ *
+ *    @luaparam funcname Name of function to run when hook is triggered.
+ *    @luaparam arg Argument to pass to hook.
+ *    @luareturn Hook identifier.
+ * @luafunc discover( funcname, arg )
+ */
+static int hook_discover( lua_State *L )
+{
+   unsigned int h;
+   h = hook_generic( L, "discover", 0., 1, 0 );
+   lua_pushnumber( L, h );
+   return 1;
+}
+/**
  * @brief Hook run at the end of each frame.
  *
  * This hook is a good way to do possibly breaking stuff like for example player.teleport().
@@ -581,17 +604,17 @@ static int hook_safe( lua_State *L )
  *
  * You can hook to different actions.  Currently hook system only supports:<br />
  * <ul>
- *    <li> "death" : triggered when pilot dies (before marked as dead). <br />
- *    <li> "exploded" : triggered when pilot has died and the final explosion has begun. <br />
- *    <li> "board" : triggered when pilot is boarded.<br />
- *    <li> "disable" : triggered when pilot is disabled (with disable set).<br />
- *    <li> "undisable" : triggered when pilot recovers from being disabled.<br />
- *    <li> "jump" : triggered when pilot jumps to hyperspace (before he actually jumps out).<br />
- *    <li> "hail" : triggered when pilot is hailed.<br />
- *    <li> "land" : triggered when pilot is landing (right when starting land descent).<br />
- *    <li> "attacked" : triggered when the pilot is attacked. <br />
- *    <li> "idle" : triggered when the pilot becomes idle in manual control.<br />
- *    <li> "lockon" : triggered when the pilot locked on a missile on it's target.<br />
+ *    <li> "death" : triggered when pilot dies (before marked as dead). </li>
+ *    <li> "exploded" : triggered when pilot has died and the final explosion has begun. </li>
+ *    <li> "board" : triggered when pilot is boarded.</li>
+ *    <li> "disable" : triggered when pilot is disabled (with disable set).</li>
+ *    <li> "undisable" : triggered when pilot recovers from being disabled.</li>
+ *    <li> "jump" : triggered when pilot jumps to hyperspace (before he actually jumps out).</li>
+ *    <li> "hail" : triggered when pilot is hailed.</li>
+ *    <li> "land" : triggered when pilot is landing (right when starting land descent).</li>
+ *    <li> "attacked" : triggered when the pilot is attacked. </li>
+ *    <li> "idle" : triggered when the pilot becomes idle in manual control.</li>
+ *    <li> "lockon" : triggered when the pilot locked on a missile on it's target.</li>
  * </ul>
  * <br />
  * If you pass nil as pilot, it will set it as a global hook that will jump for all pilots.<br />
@@ -658,7 +681,7 @@ static int hook_pilot( lua_State *L )
    }
 
    /* actually add the hook */
-   snprintf( buf, sizeof(buf), "p_%s", hook_type );
+   nsnprintf( buf, sizeof(buf), "p_%s", hook_type );
    h = hook_generic( L, buf, 0., 3, 0 );
    if (p==NULL)
       pilots_addGlobalHook( type, h );

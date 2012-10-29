@@ -32,6 +32,7 @@ else -- Default to English
 
    msg = {}
    msg[1] = "Target destroyed. Mission objective updated"
+   msg[2] = "Target has jumped. Persue %s!"
 end
 
 
@@ -40,8 +41,8 @@ include("dat/missions/pirate/common.lua")
 
 
 -- Scripts we need
-include("scripts/pilot/empire.lua")
-include("scripts/jumpdist.lua")
+include("pilot/empire.lua")
+include("jumpdist.lua")
 
 
 function create ()
@@ -102,7 +103,7 @@ end
 
 function emp_systems_filter( sys, data )
    -- Must have Empire
-   if not sys:hasPresence( "Empire" ) then
+   if not sys:presences()["Empire"] then
       return false
    end
 

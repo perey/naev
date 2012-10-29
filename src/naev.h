@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2011 Edgar Simo Serra
+ * Copyright 2006-2012 Edgar Simo Serra
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -82,6 +82,9 @@
  */
 #ifndef PRIu64
 #   define PRIu64    "%ju" /**< Illegal, evil and probably eats babies too. */
+#endif
+#ifndef PRIi64
+#   define PRIi64    "%jd" /**< Illegal, evil and probably eats babies too. */
 #endif
 
 

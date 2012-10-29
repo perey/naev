@@ -8,13 +8,13 @@
 
 ]]--
 
-include "scripts/numstring.lua"
+include "numstring.lua"
 
 -- localization stuff, translators would work here
 lang = naev.lang()
 if lang == "es" then
 else -- default english
-   bar_desc = "A bunch of scientists seems to be chattering nervously amongst themselves."
+   bar_desc = "A bunch of scientists seem to be chattering nervously amongst themselves."
    mtitle = {}
    mtitle[1] = "Nebula Satellite"
    misn_reward = "%s credits"
@@ -28,8 +28,8 @@ else -- default english
    text = {}
    text[1] = [[You approach the scientists. They seem a bit nervous and one mutters something about whether it's a good idea or not. Eventually one of them comes up to you.
 "Hello Captain, we're looking for a ship to take us into the Sol Nebula. Would you be willing to take us there?"]]
-   text[2] = [["We had a trip scheduled with some Space Trader ship, but they backed out at the last minute. So we were stuck here until you came. We've got probe satellite that we have to release in the %s system to monitor the nebula's growth rate. The probe launch procedure is pretty straightforward and shouldn't have any complications."
-He takes a deep breath, "We hope to be able to find out more secrets of the Sol Nebula so man can once again regain its lost patrimony. So far the radiation and volatility of the deeper areas haven't been very kind to our instruments. That's why we designed this Satellite we're going to launch."]]
+   text[2] = [["We had a trip scheduled with a space trader ship, but they backed out at the last minute. So we were stuck here until you came. We've got a probe satellite that we have to release in the %s system to monitor the nebula's growth rate. The probe launch procedure is pretty straightforward and shouldn't have any complications."
+He takes a deep breath, "We hope to be able to find out more secrets of the Sol Nebula so mankind can once again regain its lost patrimony. So far the radiation and volatility of the deeper areas haven't been very kind to our instruments. That's why we designed this satellite we're going to launch."]]
    text[3] = [["The plan is for you to take us to %s so we can launch the probe, and then return us to our home at %s in the %s system. The probe will automatically send us the data we need if all goes well. You'll be paid %d credits when we arrive."]]
    text[4] = [[The scientists thank you for your help before going back to their home to continue their nebula research.]]
    text[9] = [["You do not have enough free cargo space to accept this mission!"]]
@@ -37,6 +37,16 @@ He takes a deep breath, "We hope to be able to find out more secrets of the Sol 
    launch[1] = "Preparing to launch satellite probe..."
    launch[2] = "Launch in 5..."
    launch[3] = "Satellite launch successful!"
+
+   articles={}
+   articles=
+   {
+   {
+      "Generic",
+      "Scientists launch science probe into the nebula",
+      "A group of scientists have succesfully launched a science probe in the nebula. The probe was specifically designed to be resistant to the corrosive environment of the nebula, and is supposed to bring new clues about the nature of the gas and where it's from", 
+   }
+   }
 end
 
 
@@ -54,6 +64,7 @@ function create ()
    -- Set stuff up for the spaceport bar
    misn.setNPC( "Scientists", "neutral/scientist" )
    misn.setDesc( bar_desc )
+
 end
 
 
@@ -89,7 +100,7 @@ function accept ()
    misn.osdCreate(mtitle[1], {mdesc[1]:format(satellite_sys:name())})
    -- Set up hooks
    hook.land("land")
-   hook.enter("jump")
+   hook.enter("jumpin")
 end
 
 
@@ -104,14 +115,13 @@ function land ()
 end
 
 
-function jump ()
+function jumpin ()
    sys = system.cur()
    -- Launch satellite
    if misn_stage == 0 and sys == satellite_sys then
       hook.timer( 3000, "beginLaunch" )
    end
 end
-
 
 --[[
    Launch process
@@ -136,6 +146,11 @@ function countLaunch ()
    end
 end
 function launchSatellite ()
+
+   articles[1][4]=time.get()+time.create(0,3,0)
+   news.add(articles)
+
+
    misn_stage = 1
    player.msg( launch[3] )
    misn.cargoJet( cargo )

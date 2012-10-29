@@ -23,12 +23,15 @@
 #include "nlua_naev.h"
 #include "nlua_space.h"
 #include "nlua_time.h"
+#include "nlua_news.h"
 #include "nlua_player.h"
 #include "nlua_pilot.h"
 #include "nlua_vec2.h"
 #include "nlua_diff.h"
 #include "nlua_outfit.h"
+#include "nlua_commodity.h"
 #include "nlua_cli.h"
+#include "nstring.h"
 
 
 /*
@@ -109,6 +112,7 @@ int nlua_loadBasic( lua_State* L )
 
    /* Override print to print in the console. */
    lua_register(L, "print", cli_print);
+   lua_register(L, "warn",  cli_warn);
 
    /* add our own */
    lua_register(L, "include", nlua_packfileLoader);
@@ -128,7 +132,9 @@ int nlua_loadBasic( lua_State* L )
 static int nlua_packfileLoader( lua_State* L )
 {
    const char *filename;
+   char *path_filename;
    char *buf;
+   int len;
    uint32_t bufsize;
 
    /* Get parameters. */
@@ -152,8 +158,20 @@ static int nlua_packfileLoader( lua_State* L )
    }
    lua_pop(L,1);
 
-   /* Try to locate the data */
-   buf = ndata_read( filename, &bufsize );
+   /* Try to locate the data directly */
+   if (ndata_exists( filename ))
+      buf = ndata_read( filename, &bufsize );
+   else {
+      /* Try to locate the data in the data path */
+      len           = strlen(LUA_INCLUDE_PATH)+strlen(filename)+2;
+      path_filename = malloc( len );
+      nsnprintf( path_filename, len, "%s%s", LUA_INCLUDE_PATH, filename );
+      if (ndata_exists( path_filename ))
+         buf = ndata_read( path_filename, &bufsize );
+      free( path_filename );
+   }
+
+   /* Must have buf by now. */
    if (buf == NULL) {
       lua_pushfstring(L, "%s not found in ndata.", filename);
       return 1;
@@ -183,17 +201,20 @@ static int nlua_packfileLoader( lua_State* L )
  *
  * Loads the modules:
  *  - naev
+ *  - var
  *  - space
  *    - planet
  *    - system
- *  - var
- *  - pilot
+ *    - jumps
  *  - time
  *  - player
+ *  - pilot
+ *  - rnd
  *  - diff
  *  - faction
  *  - vec2
  *  - outfit
+ *  - commodity
  *
  * Only is missing:
  *  - misn
@@ -213,7 +234,7 @@ int nlua_loadStandard( lua_State *L, int readonly )
    r |= nlua_loadBasic(L);
    r |= nlua_loadNaev(L);
    r |= nlua_loadVar(L,readonly);
-   r |= nlua_loadSpace(L,readonly); /* planet, system */
+   r |= nlua_loadSpace(L,readonly); /* systems, planets, jumps */
    r |= nlua_loadTime(L,readonly);
    r |= nlua_loadPlayer(L,readonly);
    r |= nlua_loadPilot(L,readonly);
@@ -222,6 +243,8 @@ int nlua_loadStandard( lua_State *L, int readonly )
    r |= nlua_loadFaction(L,readonly);
    r |= nlua_loadVector(L);
    r |= nlua_loadOutfit(L,readonly);
+   r |= nlua_loadCommodity(L,readonly);
+   r |= nlua_loadNews(L,readonly);
 
    return r;
 }

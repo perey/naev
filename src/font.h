@@ -30,15 +30,16 @@ typedef struct glFont_s {
    gl_vbo *vbo_vert; /**< VBO associated to vertex coordinates. */
    glFontChar *chars; /**< Characters in the font. */
 } glFont;
-extern glFont gl_defFont; /**< default font */
-extern glFont gl_smallFont; /**< small font */
+extern glFont gl_defFont; /**< Default font. */
+extern glFont gl_smallFont; /**< Small font. */
+extern glFont gl_defFontMono; /**< Default mono font. */
 
 
 /**
  * @brief Evil hack to allow restoring, yes it makes me cry myself to sleep.
  */
 typedef struct glFontRestore_s {
-   glColour *col; /**< Colour to restore. */
+   const glColour *col; /**< Colour to restore. */
 } glFontRestore;
 
 
@@ -66,7 +67,7 @@ int gl_printMidRaw( const glFont *ft_font, const int width,
 int gl_printTextRaw( const glFont *ft_font,
       const int width, const int height,
       double bx, double by,
-      glColour* c, const char *text );
+      const glColour* c, const char *text );
 
 
 /*
@@ -87,7 +88,7 @@ int gl_printMid( const glFont *ft_font, const int width,
 int gl_printText( const glFont *ft_font,
       const int width, const int height,
       double bx, double by,
-      glColour* c, const char *fmt, ... );
+      const glColour* c, const char *fmt, ... );
 
 
 /* Dimension stuff. */
@@ -100,6 +101,7 @@ int gl_printHeight( const glFont *ft_font,
       const int width, const char *fmt, ... );
 
 /* Restore hacks. */
+void gl_printRestoreClear (void);
 void gl_printRestoreInit( glFontRestore *restore );
 void gl_printRestoreLast (void);
 void gl_printRestore( const glFontRestore *restore );

@@ -24,7 +24,7 @@ else -- default english
    msg_title = {}
    msg_msg = {}
    msg_title[1] = "Mission Success"
-   msg_msg[1] = "You are greeted by a Dvaered official and receive your payment of %s credits for your contribution in keeping Dvaered systems clean."
+   msg_msg[1] = "You are greeted by a Dvaered official and receive your payment of %s credits for your contribution to keeping Dvaered systems clean."
    msg_msg[2] = "DV: Arrived at point. Hold point."
    msg_msg[3] = "DV: Point insecure. Engage hostiles!"
    msg_msg[4] = "DV: Hostiles eliminated. Hold point."
@@ -38,16 +38,20 @@ else -- default english
    osd_msg[4] = "Return to %s in the %s system"
    osd_msg[5] = "Next: %s"
    osd_msg[6] = "Jump to the %s system"
+   
+   refusetitle = "Already on patrol"
+   refusetext = "You have already accepted a patrol mission. Finish that mission first, or abort it before accepting this mission."
 end
 
 
-include("scripts/proximity.lua")
-include("scripts/numstring.lua")
+include("proximity.lua")
+include("numstring.lua")
 
 -- Mission parameters
 chk_range      = math.pow( 2000, 2 ) -- Radius within target
 chk_range_buf  = math.pow( 2500, 2 ) -- Range at which player has left (has buffer zone)
 chk_time       = 10 -- Time in seconds to hold position
+timer_id       = nil -- Store update timer ID to avoid multiple instances
 
 -- Saves function calls
 f_dvaered = faction.get("Dvaered")
@@ -69,7 +73,7 @@ end
 
 -- Checks to see if jump target is interesting
 function check_jmp_target( jmp )
-   return jmp:hasPresence( f_dvaered )
+   return jmp:presences( f_dvaered ) ~= nil
 end
 
 -- Checks to see if planet target is interesting
@@ -142,7 +146,12 @@ function tgt_str( tgt, simple )
    if tgt.type == "jump" then
       typename = "Jump Point to"
    else
-      typename = "Planet"
+      -- Numeric classes are for stations.
+      if tonumber( tgt.data:class() ) then
+         typename = "Station"
+      else
+         typename = "Planet"
+      end
    end
    if simple then
       return string.format( "%s %s", typename, tgt.data:name() )
@@ -196,7 +205,7 @@ end
 
 function tgt_getPos( tgt )
    if tgt.type == "jump" then
-      return system.cur():jumpPos( tgt.data )
+      return jump.pos(system.cur(), tgt.data)
    else
       return tgt.data:pos()
    end
@@ -279,6 +288,10 @@ end
 
 -- Mission is accepted
 function accept ()
+   if player.misnActive("Dvaered Patrol") then
+      tk.msg(refusetitle, refusetext)
+      misn.finish()
+   end
    if misn.accept() then
 
       -- Set the OSD
@@ -329,6 +342,11 @@ function enter ()
    misn_stage = 1
    set_osd()
 
+   -- Remove stale timer
+   if timer_id then
+      hook.rm( timer_id )
+      timer_id = nil
+   end
    -- We start the update goal timer when we're in the proper system
    if visited+1 <= num_patrol and system.cur() == tgt_list[ visited+1 ].sys then
       updateGoal() -- Will set timer
@@ -433,7 +451,7 @@ function updateGoal ()
    end
 
    -- Set goal again
-   hook.timer( 1000, "updateGoal" )
+   timer_id = hook.timer( 1000, "updateGoal" )
 end
 
 -- Checks for nearby hostiles

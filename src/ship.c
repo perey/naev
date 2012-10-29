@@ -13,7 +13,7 @@
 
 #include "naev.h"
 
-#include <string.h>
+#include "nstring.h"
 #include <limits.h>
 
 #include "nxml.h"
@@ -26,13 +26,12 @@
 #include "npng.h"
 #include "colour.h"
 #include "shipstats.h"
+#include "slots.h"
+#include "nfile.h"
 
 
-#define XML_ID    "Ships"  /**< XML document identifier */
 #define XML_SHIP  "ship" /**< XML individual ship identifier. */
 
-#define SHIP_DATA    "dat/ship.xml" /**< XML file containing ships. */
-#define SHIP_GFX     "gfx/ship/" /**< Location of ship graphics. */
 #define SHIP_EXT     ".png" /**< Ship graphics extension format. */
 #define SHIP_ENGINE  "_engine" /**< Engine graphic extension. */
 #define SHIP_TARGET  "_target" /**< Target graphic extension. */
@@ -44,9 +43,7 @@
 #define BUTTON_WIDTH  80 /**< Button width in ship view window. */
 #define BUTTON_HEIGHT 30 /**< Button height in ship view window. */
 
-#define CHUNK_SIZE    32 /**< Rate at which to allocate memory. */
-
-#define STATS_DESC_MAX 128 /**< Maximum length for statistics description. */
+#define STATS_DESC_MAX 256 /**< Maximum length for statistics description. */
 
 
 static Ship* ship_stack = NULL; /**< Stack of ships available in the game. */
@@ -55,7 +52,7 @@ static Ship* ship_stack = NULL; /**< Stack of ships available in the game. */
 /*
  * Prototypes
  */
-static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy );
+static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy, int engine );
 static int ship_parse( Ship *temp, xmlNodePtr parent );
 
 
@@ -271,7 +268,7 @@ ShipClass ship_classFromString( char* str )
 /**
  * @brief Gets the ship's base price (no outfits).
  */
-credits_t ship_basePrice( Ship* s )
+credits_t ship_basePrice( const Ship* s )
 {
    credits_t price;
 
@@ -288,13 +285,47 @@ credits_t ship_basePrice( Ship* s )
 
 
 /**
+ * @brief The ship buy price, includes default outfits.
+ */
+credits_t ship_buyPrice( const Ship* s )
+{
+   int i;
+   credits_t price;
+   Outfit *o;
+
+   /* Get base price. */
+   price = ship_basePrice(s);
+
+   for (i=0; i<s->outfit_nstructure; i++) {
+      o = s->outfit_structure[i].data;
+      if (o != NULL)
+         price += o->price;
+   }
+   for (i=0; i<s->outfit_nutility; i++) {
+      o = s->outfit_utility[i].data;
+      if (o != NULL)
+         price += o->price;
+   }
+   for (i=0; i<s->outfit_nweapon; i++) {
+      o = s->outfit_weapon[i].data;
+      if (o != NULL)
+         price += o->price;
+   }
+
+   return price;
+}
+
+
+/**
  * @brief Loads the ship's comm graphic.
  *
  * Must be freed afterwards.
  */
 glTexture* ship_loadCommGFX( Ship* s )
 {
-   return gl_newImage( s->gfx_comm, 0 );
+   if (s->gfx_comm != NULL)
+      return gl_newImage( s->gfx_comm, 0 );
+   return NULL;
 }
 
 
@@ -390,7 +421,7 @@ static int ship_genTargetGFX( Ship *temp, SDL_Surface *surface, int sx, int sy )
 #endif /* ! SDL_VERSION_ATLEAST(1,3,0) */
 
    /* Load the store surface. */
-   snprintf( buf, sizeof(buf), "%s_gfx_store.png", temp->name );
+   nsnprintf( buf, sizeof(buf), "%s_gfx_store.png", temp->name );
    temp->gfx_store = gl_loadImagePad( buf, gfx_store, 0, SHIP_TARGET_W, SHIP_TARGET_H, 1, 1, 1 );
 
 #if 0 /* Disabled for now due to issues with larger sprites. */
@@ -425,7 +456,7 @@ static int ship_genTargetGFX( Ship *temp, SDL_Surface *surface, int sx, int sy )
 #endif
 
    /* Load the surface. */
-   snprintf( buf, sizeof(buf), "%s_gfx_target.png", temp->name );
+   nsnprintf( buf, sizeof(buf), "%s_gfx_target.png", temp->name );
    temp->gfx_target = gl_loadImagePad( buf, gfx, 0, sw, sh, 1, 1, 1 );
 
    return 0;
@@ -438,7 +469,7 @@ static int ship_genTargetGFX( Ship *temp, SDL_Surface *surface, int sx, int sy )
  *    @param temp Ship to load into.
  *    @param buf Name of the texture to work with.
  */
-static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy )
+static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy, int engine )
 {
    char base[PATH_MAX], str[PATH_MAX];
    int i;
@@ -461,7 +492,7 @@ static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy )
    }
 
    /* Load the space sprite. */
-   snprintf( str, PATH_MAX, SHIP_GFX"%s/%s"SHIP_EXT, base, buf );
+   nsnprintf( str, PATH_MAX, SHIP_GFX_PATH"%s/%s"SHIP_EXT, base, buf );
    rw    = ndata_rwops( str );
    npng  = npng_open( rw );
    npng_dim( npng, &w, &h );
@@ -481,8 +512,8 @@ static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy )
    SDL_FreeSurface( surface );
 
    /* Load the engine sprite .*/
-   if (conf.engineglow && conf.interpolate) {
-      snprintf( str, PATH_MAX, SHIP_GFX"%s/%s"SHIP_ENGINE SHIP_EXT, base, buf );
+   if (engine && conf.engineglow && conf.interpolate) {
+      nsnprintf( str, PATH_MAX, SHIP_GFX_PATH"%s/%s"SHIP_ENGINE SHIP_EXT, base, buf );
       temp->gfx_engine = gl_newSprite( str, sx, sy, OPENGL_TEX_MIPMAPS );
       if (temp->gfx_engine == NULL)
          WARN("Ship '%s' does not have an engine sprite (%s).", temp->name, str );
@@ -493,12 +524,111 @@ static int ship_loadGFX( Ship *temp, char *buf, int sx, int sy )
    temp->mangle /= temp->gfx_space->sx * temp->gfx_space->sy;
 
    /* Get the comm graphic for future loading. */
-   snprintf( str, PATH_MAX, SHIP_GFX"%s/%s"SHIP_COMM SHIP_EXT, base, buf );
+   nsnprintf( str, PATH_MAX, SHIP_GFX_PATH"%s/%s"SHIP_COMM SHIP_EXT, base, buf );
    temp->gfx_comm = strdup(str);
 
    return 0;
 }
 
+
+/**
+ * @brief Parses a slot for a ship.
+ *
+ *    @param temp Ship to be parsed.
+ *    @param slot Slot being parsed.
+ *    @param type Type of the slot.
+ *    @param node Node containing the data.
+ *    @return 0 on success.
+ */
+static int ship_parseSlot( Ship *temp, ShipOutfitSlot *slot, OutfitSlotType type, xmlNodePtr node )
+{
+   OutfitSlotSize base_size;
+   char *buf, *typ;
+   Outfit *o;
+
+   /* Parse size. */
+   xmlr_attr( node, "size", buf );
+   if (buf != NULL)
+      base_size = outfit_toSlotSize( buf );
+   else {
+      if ((temp->class == SHIP_CLASS_BULK_CARRIER) ||
+            (temp->class == SHIP_CLASS_CRUISER) ||
+            (temp->class == SHIP_CLASS_CARRIER) ||
+            (temp->class == SHIP_CLASS_MOTHERSHIP)) {
+         typ       = "Large";
+         base_size = OUTFIT_SLOT_SIZE_HEAVY;
+      }
+      else if ((temp->class == SHIP_CLASS_CRUISE_SHIP) ||
+            (temp->class == SHIP_CLASS_FREIGHTER) ||
+            (temp->class == SHIP_CLASS_DESTROYER) ||
+            (temp->class == SHIP_CLASS_CORVETTE) ||
+            (temp->class == SHIP_CLASS_HEAVY_DRONE) ||
+            (temp->class == SHIP_CLASS_ARMOURED_TRANSPORT)) {
+         typ       = "Medium";
+         base_size = OUTFIT_SLOT_SIZE_MEDIUM;
+      }
+      else {
+         typ       = "Small";
+         base_size = OUTFIT_SLOT_SIZE_LIGHT;
+      }
+      WARN("Ship '%s' has implicit slot size, setting to '%s'",temp->name, typ);
+   }
+   free(buf);
+
+   /* Get mount point for weapons. */
+   if (type == OUTFIT_SLOT_WEAPON) {
+      xmlr_attr(node,"x",buf);
+      if (buf!=NULL) {
+         slot->mount.x = atof(buf);
+         free(buf);
+      }
+      else
+         WARN("Ship '%s' missing 'x' element of 'weapon' slot.",temp->name);
+      xmlr_attr(node,"y",buf);
+      if (buf!=NULL) {
+         slot->mount.y = atof(buf);
+         /* Since we measure in pixels, we have to modify it so it
+          *  doesn't get corrected by the ortho correction. */
+         slot->mount.y *= M_SQRT2;
+         free(buf);
+      }
+      else
+         WARN("Ship '%s' missing 'y' element of 'weapon' slot.",temp->name);
+      xmlr_attr(node,"h",buf);
+      if (buf!=NULL) {
+         slot->mount.h = atof(buf);
+         free(buf);
+      }
+      else
+         WARN("Ship '%s' missing 'h' element of 'weapon' slot.",temp->name);
+   }
+
+   /* Parse property. */
+   xmlr_attr( node, "prop", buf );
+   slot->slot.spid = sp_get( buf );
+   slot->exclusive = sp_exclusive( slot->slot.spid );
+   slot->required  = sp_required( slot->slot.spid );
+   free( buf );
+
+   /* Parse default outfit. */
+   buf = xml_get(node);
+   if (buf != NULL) {
+      o = outfit_get( buf );
+      if (o == NULL)
+         WARN( "Ship '%s' has default outfit '%s' which does not exist.", temp->name, buf );
+      slot->data = o;
+   }
+
+   /* Set stuff. */
+   slot->slot.size = base_size;
+   slot->slot.type = type;
+
+   /* Required slots need a default outfit. */
+   if (slot->required && (slot->data == NULL))
+      WARN("Ship '%s' has required slot without a default outfit.", temp->name);
+
+   return 0;
+}
 
 /**
  * @brief Extracts the ingame ship from an XML node.
@@ -513,24 +643,31 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
    xmlNodePtr cur, node;
    int sx, sy;
    char *stmp, *buf;
-   int l, m, h;
-   OutfitSlotSize base_size;
+   int l, m, h, engine;
    ShipStatList *ll;
 
    /* Clear memory. */
    memset( temp, 0, sizeof(Ship) );
 
    /* Defaults. */
-   temp->thrust = -1;
-   temp->speed  = -1;
    ss_statsInit( &temp->stats_array );
 
    /* Get name. */
    xmlr_attr(parent,"name",temp->name);
    if (temp->name == NULL)
-      WARN("Ship in "SHIP_DATA" has invalid or no name");
+      WARN("Ship in "SHIP_DATA_PATH" has invalid or no name");
+   
+   /* Datat that must be loaded first. */
+   node = parent->xmlChildrenNode;
+   do { /* load all the data */
+      xml_onlyNodes(node);
+      if (xml_isNode(node,"class")) {
+         temp->class = ship_classFromString( xml_get(node) );
+         continue;
+      }
+   } while (xml_nextNode(node));
 
-   /* Load data. */
+   /* Load the rest of the data. */
    node = parent->xmlChildrenNode;
    do { /* load all the data */
 
@@ -562,8 +699,16 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
          else
             sy = 8;
 
+         xmlr_attr(node, "noengine", stmp );
+         if (stmp != NULL) {
+            engine = 0;
+            free(stmp);
+         }
+         else
+            engine = 1;
+
          /* Load the graphics. */
-         ship_loadGFX( temp, buf, sx, sy );
+         ship_loadGFX( temp, buf, sx, sy, engine );
 
          continue;
       }
@@ -575,7 +720,7 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
       }
       xmlr_strd(node,"base_type",temp->base_type);
       if (xml_isNode(node,"class")) {
-         temp->class = ship_classFromString( xml_get(node) );
+         /* Already preemptively loaded, avoids warning. */
          continue;
       }
       xmlr_long(node,"price",temp->price);
@@ -618,7 +763,7 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
             xmlr_float(cur,"mass",temp->mass);
             xmlr_float(cur,"cpu",temp->cpu);
             xmlr_int(cur,"fuel",temp->fuel);
-            xmlr_float(cur,"cap_cargo",temp->cap_cargo);
+            xmlr_float(cur,"cargo",temp->cap_cargo);
             /* All the xmlr_ stuff have continue cases. */
             WARN("Ship '%s' has unknown characteristic node '%s'.", temp->name, cur->name);
          } while (xml_nextNode(cur));
@@ -638,60 +783,26 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
             else
                WARN("Ship '%s' has unknown slot node '%s'.", temp->name, cur->name);
          } while (xml_nextNode(cur));
+
          /* Allocate the space. */
-         temp->outfit_structure     = calloc( temp->outfit_nstructure, sizeof(ShipOutfitSlot) );
-         temp->outfit_utility  = calloc( temp->outfit_nutility, sizeof(ShipOutfitSlot) );
-         temp->outfit_weapon    = calloc( temp->outfit_nweapon, sizeof(ShipOutfitSlot) );
+         temp->outfit_structure  = calloc( temp->outfit_nstructure, sizeof(ShipOutfitSlot) );
+         temp->outfit_utility    = calloc( temp->outfit_nutility, sizeof(ShipOutfitSlot) );
+         temp->outfit_weapon     = calloc( temp->outfit_nweapon, sizeof(ShipOutfitSlot) );
          /* Second pass, initialize the mounts. */
          l = m = h = 0;
          cur = node->children;
          do {
             xml_onlyNodes(cur);
             if (xml_isNode(cur,"structure")) {
-               temp->outfit_structure[l].slot.type = OUTFIT_SLOT_STRUCTURE;
-               temp->outfit_structure[l].slot.size = outfit_toSlotSize( xml_get(cur) );
-               /*if (temp->outfit_structure[l].size == OUTFIT_SLOT_SIZE_NA)
-                  WARN("Ship '%s' has invalid slot size '%s'", temp->name, xml_get(cur) );*/
+               ship_parseSlot( temp, &temp->outfit_structure[l], OUTFIT_SLOT_STRUCTURE, cur );
                l++;
             }
             if (xml_isNode(cur,"utility")) {
-               temp->outfit_utility[m].slot.type = OUTFIT_SLOT_UTILITY;
-               temp->outfit_utility[m].slot.size = outfit_toSlotSize( xml_get(cur) );
-               /*if (temp->outfit_utility[m].size == OUTFIT_SLOT_SIZE_NA)
-                  WARN("Ship '%s' has invalid slot size '%s'", temp->name, xml_get(cur) );*/
+               ship_parseSlot( temp, &temp->outfit_utility[m], OUTFIT_SLOT_UTILITY, cur );
                m++;
             }
             if (xml_isNode(cur,"weapon")) {
-               temp->outfit_weapon[h].slot.type = OUTFIT_SLOT_WEAPON;
-               temp->outfit_weapon[h].slot.size = outfit_toSlotSize( xml_get(cur) );
-               /*if (temp->outfit_weapon[h].size == OUTFIT_SLOT_SIZE_NA)
-                  WARN("Ship '%s' has invalid slot size '%s'", temp->name, xml_get(cur) );*/
-               /* Get mount point. */
-               xmlr_attr(cur,"x",stmp);
-               if (stmp!=NULL) {
-                  temp->outfit_weapon[h].mount.x = atof(stmp);
-                  free(stmp);
-               }
-               else
-                  WARN("Ship '%s' missing 'x' element of 'weapon' slot.",temp->name);
-               xmlr_attr(cur,"y",stmp);
-               if (stmp!=NULL) {
-                  temp->outfit_weapon[h].mount.y = atof(stmp);
-                  /* Since we measure in pixels, we have to modify it so it
-                   *  doesn't get corrected by the ortho correction. */
-                  temp->outfit_weapon[h].mount.y *= M_SQRT2;
-                  free(stmp);
-               }
-               else
-                  WARN("Ship '%s' missing 'y' element of 'weapon' slot.",temp->name);
-               xmlr_attr(cur,"h",stmp);
-               if (stmp!=NULL) {
-                  temp->outfit_weapon[h].mount.h = atof(stmp);
-                  free(stmp);
-               }
-               else
-                  WARN("Ship '%s' missing 'h' element of 'weapon' slot.",temp->name);
-               /* Increment h. */
+               ship_parseSlot( temp, &temp->outfit_weapon[h], OUTFIT_SLOT_WEAPON, cur );
                h++;
             }
          } while (xml_nextNode(cur));
@@ -729,38 +840,16 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
          continue;
       }
 
+      /* Used by in-sanity and NSH utils, no in-game meaning. */
+      if (xml_isNode(node,"mission"))
+         continue;
+
       DEBUG("Ship '%s' has unknown node '%s'.", temp->name, node->name);
    } while (xml_nextNode(node));
 
    /* Post processing. */
    temp->dmg_absorb   /= 100.;
    temp->turn         *= M_PI / 180.; /* Convert to rad. */
-   temp->thrust *= temp->mass;
-
-   /* Second pass default values for slot size. */
-   if ((temp->class == SHIP_CLASS_BULK_CARRIER) ||
-         (temp->class == SHIP_CLASS_CRUISER) ||
-         (temp->class == SHIP_CLASS_CARRIER) ||
-         (temp->class == SHIP_CLASS_MOTHERSHIP))
-      base_size = OUTFIT_SLOT_SIZE_HEAVY;
-   else if ((temp->class == SHIP_CLASS_CRUISE_SHIP) ||
-         (temp->class == SHIP_CLASS_FREIGHTER) ||
-         (temp->class == SHIP_CLASS_DESTROYER) ||
-         (temp->class == SHIP_CLASS_CORVETTE) ||
-         (temp->class == SHIP_CLASS_HEAVY_DRONE) ||
-         (temp->class == SHIP_CLASS_ARMOURED_TRANSPORT))
-      base_size = OUTFIT_SLOT_SIZE_MEDIUM;
-   else
-      base_size = OUTFIT_SLOT_SIZE_LIGHT;
-   for (i=0; i<temp->outfit_nweapon; i++)
-      if (temp->outfit_weapon[i].slot.size == OUTFIT_SLOT_SIZE_NA)
-         temp->outfit_weapon[i].slot.size = base_size;
-   for (i=0; i<temp->outfit_nutility; i++)
-      if (temp->outfit_utility[i].slot.size == OUTFIT_SLOT_SIZE_NA)
-         temp->outfit_utility[i].slot.size = base_size;
-   for (i=0; i<temp->outfit_nstructure; i++)
-      if (temp->outfit_structure[i].slot.size == OUTFIT_SLOT_SIZE_NA)
-         temp->outfit_structure[i].slot.size = base_size;
 
    /* ship validator */
 #define MELEMENT(o,s)      if (o) WARN("Ship '%s' missing '"s"' element", temp->name)
@@ -772,19 +861,6 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
    MELEMENT(temp->price==0,"price");
    MELEMENT(temp->fabricator==NULL,"fabricator");
    MELEMENT(temp->description==NULL,"description");
-   MELEMENT(temp->thrust==-1,"thrust");
-   MELEMENT(temp->turn==0,"turn");
-   MELEMENT(temp->speed==-1,"speed");
-   MELEMENT(temp->armour==0,"armour");
-   MELEMENT(temp->shield==0,"shield");
-   MELEMENT(temp->shield_regen==0,"shield_regen");
-   MELEMENT(temp->energy==0,"energy");
-   MELEMENT(temp->energy_regen==0,"energy_regen");
-   MELEMENT(temp->fuel==0,"fuel");
-   MELEMENT(temp->crew==0,"crew");
-   MELEMENT(temp->mass==0.,"mass");
-   MELEMENT(temp->cpu==0.,"cpu");
-   MELEMENT(temp->cap_cargo==0,"cap_cargo");
    MELEMENT(temp->armour==0.,"armour");
    /*MELEMENT(temp->thrust==0.,"thrust");
    MELEMENT(temp->turn==0.,"turn");
@@ -796,7 +872,8 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
    MELEMENT(temp->fuel==0.,"fuel");*/
    MELEMENT(temp->crew==0,"crew");
    MELEMENT(temp->mass==0.,"mass");
-   MELEMENT(temp->cap_cargo==0,"cargo");
+   /*MELEMENT(temp->cap_cargo==0,"cargo");
+   MELEMENT(temp->cpu==0.,"cpu");*/
 #undef MELEMENT
 
    return 0;
@@ -810,39 +887,65 @@ static int ship_parse( Ship *temp, xmlNodePtr parent )
  */
 int ships_load (void)
 {
-   uint32_t bufsize;
-   char *buf = ndata_read( SHIP_DATA, &bufsize);
+   uint32_t bufsize, nfiles;
+   char *buf, **ship_files, *file;
+   int i, sl;
+   xmlNodePtr node;
+   xmlDocPtr doc;
 
    /* Sanity. */
    ss_check();
 
-   xmlNodePtr node;
-   xmlDocPtr doc = xmlParseMemory( buf, bufsize );
-
-   node = doc->xmlChildrenNode; /* Ships node */
-   if (strcmp((char*)node->name,XML_ID)) {
-      ERR("Malformed "SHIP_DATA" file: missing root element '"XML_ID"'");
-      return -1;
+   /* Initialize stack if needed. */
+   if (ship_stack == NULL) {
+      ship_stack = array_create(Ship);
    }
 
-   node = node->xmlChildrenNode; /* first ship node */
-   if (node == NULL) {
-      ERR("Malformed "SHIP_DATA" file: does not contain elements");
-      return -1;
-   }
+   ship_files = ndata_list( SHIP_DATA_PATH, &nfiles );
+   for (i=0; i<(int)nfiles; i++) {
 
-   ship_stack = array_create(Ship);
-   do {
+      /* Get the file name .*/
+      sl   = strlen(SHIP_DATA_PATH)+strlen(ship_files[i])+1;
+      file = malloc( sl );
+      nsnprintf( file, sl, "%s%s", SHIP_DATA_PATH, ship_files[i] );
+
+      /* Load the XML. */
+      buf  = ndata_read( file, &bufsize );
+      doc  = xmlParseMemory( buf, bufsize );
+
+      free(file);
+   
+      if (doc == NULL) {
+         free(buf);
+         WARN("%s file is invalid xml!",file);
+         continue;
+      }
+   
+      node = doc->xmlChildrenNode; /* First ship node */
+      if (node == NULL) {
+         xmlFreeDoc(doc);
+         free(buf);
+         WARN("Malformed %s file: does not contain elements",file);
+         continue;
+      }
+   
       if (xml_isNode(node, XML_SHIP))
          /* Load the ship. */
-         ship_parse(&array_grow(&ship_stack), node);
-   } while (xml_nextNode(node));
+         ship_parse( &array_grow(&ship_stack), node );
+
+      /* Clean up. */
+      xmlFreeDoc(doc);
+      free(buf);
+   }
+
+   /* Shrink stack. */
    array_shrink(&ship_stack);
-
-   xmlFreeDoc(doc);
-   free(buf);
-
    DEBUG("Loaded %d Ship%s", array_size(ship_stack), (array_size(ship_stack)==1) ? "" : "s" );
+
+   /* Clean up. */
+   for (i=0; i<(int)nfiles; i++)
+      free( ship_files[i] );
+   free( ship_files );
 
    return 0;
 }
@@ -854,7 +957,7 @@ int ships_load (void)
 void ships_free (void)
 {
    Ship *s;
-   int i;
+   int i, j;
    for (i = 0; i < array_size(ship_stack); i++) {
       s = &ship_stack[i];
 
@@ -868,6 +971,12 @@ void ships_free (void)
       free(s->desc_stats);
 
       /* Free outfits. */
+      for (j=0; j<s->outfit_nstructure; j++)
+         outfit_freeSlot( &s->outfit_structure[j].slot );
+      for (j=0; j<s->outfit_nutility; j++)
+         outfit_freeSlot( &s->outfit_utility[j].slot );
+      for (j=0; j<s->outfit_nweapon; j++)
+         outfit_freeSlot( &s->outfit_weapon[j].slot );
       if (s->outfit_structure != NULL)
          free(s->outfit_structure);
       if (s->outfit_utility != NULL)

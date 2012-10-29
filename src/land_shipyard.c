@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include "nstring.h"
 #include <math.h>
 
 #include "log.h"
@@ -24,6 +24,7 @@
 #include "toolkit.h"
 #include "tk/toolkit_priv.h"
 #include "dialogue.h"
+#include "map_find.h"
 
 
 /*
@@ -40,6 +41,7 @@ static void shipyard_trade( unsigned int wid, char* str );
 static void shipyard_rmouse( unsigned int wid, char* widget_name );
 static void shipyard_renderSlots( double bx, double by, double bw, double bh, void *data );
 static void shipyard_renderSlotsRow( double bx, double by, double bw, char *str, ShipOutfitSlot *s, int n );
+static void shipyard_find( unsigned int wid, char* str );
 
 
 /**
@@ -54,7 +56,7 @@ void shipyard_open( unsigned int wid )
    int nships;
    int w, h;
    int iw, ih;
-   int bw, bh;
+   int bw, bh, padding, off;
    int th;
    int y;
    const char *buf;
@@ -69,20 +71,26 @@ void shipyard_open( unsigned int wid )
    iw = 310 + (w-800);
    ih = h - 60;
 
+   /* Left padding + per-button padding * nbuttons */
+   padding = 40 + 20 * 4;
+
    /* Calculate button dimensions. */
-   bw = (w - iw - 100) / 3;
+   bw = (w - iw - padding) / 4;
    bh = LAND_BUTTON_HEIGHT;
 
    /* buttons */
-   window_addButton( wid, -20, 20,
+   window_addButtonKey( wid, off = -20, 20,
          bw, bh, "btnCloseShipyard",
-         "Takeoff", land_buttonTakeoff );
-   window_addButton( wid, -40 - bw, 20,
+         "Take Off", land_buttonTakeoff, SDLK_t );
+   window_addButtonKey( wid, off -= 20+bw, 20,
          bw, bh, "btnTradeShip",
-         "Trade-In", shipyard_trade );
-   window_addButton( wid, -60 - bw*2, 20,
+         "Trade-In", shipyard_trade, SDLK_r );
+   window_addButtonKey( wid, off -= 20+bw, 20,
          bw, bh, "btnBuyShip",
-         "Buy", shipyard_buy );
+         "Buy", shipyard_buy, SDLK_b );
+   window_addButtonKey( wid, off -= 20+bw, 20,
+         bw, bh, "btnFindShips",
+         "Find Ships", shipyard_find, SDLK_f );
 
    /* target gfx */
    window_addRect( wid, -41, -50,
@@ -155,6 +163,8 @@ void shipyard_open( unsigned int wid )
 
    /* write the shipyard stuff */
    shipyard_update(wid, NULL);
+   /* Set default keyboard focuse to the list */
+   window_setFocus( wid , "iarShipyard" );
 }
 /**
  * @brief Updates the ships in the shipyard window.
@@ -175,7 +185,7 @@ void shipyard_update( unsigned int wid, char* str )
       window_modifyImage( wid, "imgTarget", NULL, 0, 0 );
       window_disableButton( wid, "btnBuyShip");
       window_disableButton( wid, "btnTradeShip");
-      snprintf( buf, PATH_MAX,
+      nsnprintf( buf, PATH_MAX,
             "None\n"
             "NA\n"
             "NA\n"
@@ -213,9 +223,9 @@ void shipyard_update( unsigned int wid, char* str )
    /* update text */
    window_modifyText( wid, "txtStats", ship->desc_stats );
    window_modifyText( wid, "txtDescription", ship->description );
-   credits2str( buf2, ship->price, 2 );
+   credits2str( buf2, ship_buyPrice(ship), 2 );
    credits2str( buf3, player.p->credits, 2 );
-   snprintf( buf, PATH_MAX,
+   nsnprintf( buf, PATH_MAX,
          "%s\n"
          "%s\n"
          "%s\n"
@@ -245,7 +255,7 @@ void shipyard_update( unsigned int wid, char* str )
          ship->cpu,
          ship->mass,
          pow( ship->mass, 1./2.5 ) / 5. * (ship->stats_array.jump_delay/100.+1.), /**< @todo make this more portable. */
-         ship->thrust / ship->mass,
+         ship->thrust,
          ship->speed,
          ship->turn*180/M_PI,
          /* Misc */
@@ -261,15 +271,28 @@ void shipyard_update( unsigned int wid, char* str )
    window_modifyText( wid,  "txtDDesc", buf );
 
    if (!shipyard_canBuy( shipname ))
-      window_disableButton( wid, "btnBuyShip");
+      window_disableButtonSoft( wid, "btnBuyShip");
    else
       window_enableButton( wid, "btnBuyShip");
 
    if (!shipyard_canTrade( shipname ))
-      window_disableButton( wid, "btnTradeShip");
+      window_disableButtonSoft( wid, "btnTradeShip");
    else
       window_enableButton( wid, "btnTradeShip");
 }
+
+
+/**
+ * @brief Starts the map find with ship search selected.
+ *    @param wid Window buying outfit from.
+ *    @param str Unused.
+ */
+static void shipyard_find( unsigned int wid, char* str )
+{
+   (void) str;
+   map_inputFindType(wid, "ship");
+}
+
 
 /**
  * @brief Player right-clicks on a ship.
@@ -281,6 +304,7 @@ static void shipyard_rmouse( unsigned int wid, char* widget_name )
 {
     return shipyard_buy(wid, widget_name);
 }
+
 
 /**
  * @brief Player attempts to buy a ship.
@@ -296,9 +320,9 @@ static void shipyard_buy( unsigned int wid, char* str )
    shipname = toolkit_getImageArray( wid, "iarShipyard" );
    ship = ship_get( shipname );
 
-   credits_t targetprice = ship->price;
+   credits_t targetprice = ship_buyPrice(ship);
 
-   if (land_errDialogue( shipname, "buy" ))
+   if (land_errDialogue( shipname, "buyShip" ))
       return;
 
    credits2str( buf, targetprice, 2 );
@@ -327,15 +351,18 @@ int shipyard_canBuy ( char *shipname )
    Ship* ship;
    ship = ship_get( shipname );
    int failure = 0;
+   credits_t price;
+
+   price = ship_buyPrice(ship);
 
    /* Must have enough credits and the necessary license. */
    if (!player_hasLicense(ship->license)) {
       land_errDialogueBuild( "You lack the %s.", ship->license );
       failure = 1;
    }
-   if (!player_hasCredits( ship->price )) {
+   if (!player_hasCredits( price )) {
       char buf[ECON_CRED_STRLEN];
-      credits2str( buf, ship->price - player.p->credits, 2 );
+      credits2str( buf, price - player.p->credits, 2 );
       land_errDialogueBuild( "You need %s more credits.", buf);
       failure = 1;
    }
@@ -349,8 +376,8 @@ int shipyard_canBuy ( char *shipname )
 int can_sell( char* shipname )
 {
    int failure = 0;
-   if (strcmp( shipname, player.p->name )==0) { /* Already onboard. */
-      land_errDialogueBuild( "You can't sell the ship you're piloting.", shipname );
+   if (strcmp( shipname, player.p->name )==0) { /* Already on-board. */
+      land_errDialogueBuild( "You can't sell the ship you're piloting!", shipname );
       failure = 1;
    }
 
@@ -389,14 +416,17 @@ int shipyard_canTrade( char* shipname )
    int failure = 0;
    Ship* ship;
    ship = ship_get( shipname );
+   credits_t price;
+
+   price = ship_buyPrice( ship );
 
    /* Must have the necessary license, enough credits, and be able to swap ships. */
    if (!player_hasLicense(ship->license)) {
       land_errDialogueBuild( "You lack the %s.", ship->license );
       failure = 1;
    }
-   if (!player_hasCredits( ship->price - player_shipPrice(player.p->name))) {
-      credits_t creditdifference = ship->price - (player_shipPrice(player.p->name) + player.p->credits);
+   if (!player_hasCredits( price - player_shipPrice(player.p->name))) {
+      credits_t creditdifference = price - (player_shipPrice(player.p->name) + player.p->credits);
       char buf[ECON_CRED_STRLEN];
       credits2str( buf, creditdifference, 2 );
       land_errDialogueBuild( "You need %s more credits.", buf);
@@ -423,10 +453,10 @@ static void shipyard_trade( unsigned int wid, char* str )
    shipname = toolkit_getImageArray( wid, "iarShipyard" );
    ship = ship_get( shipname );
 
-   credits_t targetprice = ship->price;
+   credits_t targetprice = ship_buyPrice(ship);
    credits_t playerprice = player_shipPrice(player.p->name);
 
-   if (land_errDialogue( shipname, "trade" ))
+   if (land_errDialogue( shipname, "tradeShip" ))
       return;
 
    credits2str( buf, targetprice, 2 );
@@ -512,7 +542,7 @@ static void shipyard_renderSlotsRow( double bx, double by, double bw, char *str,
    (void) bw;
    int i;
    double x;
-   glColour *c;
+   const glColour *c;
 
    x = bx;
 

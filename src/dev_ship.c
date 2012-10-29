@@ -16,6 +16,7 @@
 
 #include "log.h"
 #include "ship.h"
+#include "nstring.h"
 
 
 /**
@@ -36,10 +37,10 @@ void dship_csv( const char *path )
    }
 
    /* Write "header" */
-   l = snprintf( buf, sizeof(buf),
+   l = nsnprintf( buf, sizeof(buf),
          "name,class,base_type,price,license,fabricator,"
          "thrust,turn,speed,"
-         "crew,mass,cpu,fuel,cap_cargo,"
+         "crew,mass,cpu,fuel,cargo,"
          "absorb,"
          "armour,armour_regen,"
          "shield,shield_regen,"
@@ -52,7 +53,7 @@ void dship_csv( const char *path )
    for (i=0; i<n; i++) {
       s = &s_all[i];
 
-      l = snprintf( buf, sizeof(buf),
+      l = nsnprintf( buf, sizeof(buf),
             "%s,%s,%s,%"CREDITS_PRI",%s,%s,"
             "%f,%f,%f,"
             "%d,%f,%f,%d,%f,"
@@ -62,7 +63,7 @@ void dship_csv( const char *path )
             "%f,%f,"
             "%d,%d,%d\n",
             s->name, ship_class(s), s->base_type, s->price, s->license, s->fabricator,
-            s->thrust/s->mass, s->turn*180./M_PI, s->speed,
+            s->thrust, s->turn*180./M_PI, s->speed,
             s->crew, s->mass, s->cpu, s->fuel, s->cap_cargo,
             s->dmg_absorb*100,
             s->armour, s->armour_regen,

@@ -16,7 +16,7 @@
 
 #include "naev.h"
 
-#include <string.h>
+#include "nstring.h"
 
 #include "SDL.h"
 
@@ -29,7 +29,6 @@
 #include "conf.h"
 
 
-#define INTRO_FONT_SIZE    18. /**< Intro text font size. */
 #define INTRO_SPEED        30. /**< Speed of text in characters / second. */
 
 
@@ -68,7 +67,7 @@ static int intro_load( const char *text );
 static void intro_cleanup (void);
 static scroll_buf_t *arrange_scroll_buf( scroll_buf_t *arr, int n );
 static void intro_event_handler( int *stop, double *offset, double *vel );
-static inline void initialize_image( intro_img_t *img );
+static void initialize_image( intro_img_t *img );
 static void intro_fade_image_in( intro_img_t *side, intro_img_t *transition,
                                  const char *img_file );
 static int intro_draw_text( scroll_buf_t *sb_list, double offset,
@@ -94,7 +93,7 @@ static int intro_load( const char *text )
    intro_length = intro_size; /* Length approximation. */
 
    /* Create intro font. */
-   gl_fontInit( &intro_font, "dat/mono.ttf", INTRO_FONT_SIZE );
+   gl_fontInit( &intro_font, "dat/mono.ttf", conf.font_size_intro );
 
    /* Load lines. */
    p = 0;
@@ -197,7 +196,7 @@ static scroll_buf_t *arrange_scroll_buf( scroll_buf_t *arr, int n )
  *
  *    @brief img Image to initialize.
  */
-static inline void initialize_image( intro_img_t *img )
+static void initialize_image( intro_img_t *img )
 {
    img->tex = NULL;
    img->x   = 100.;

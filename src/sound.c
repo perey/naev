@@ -23,14 +23,15 @@
 #include "sound_openal.h"
 #include "sound_sdlmix.h"
 #include "log.h"
+#include "nstring.h"
 #include "ndata.h"
 #include "music.h"
 #include "physics.h"
 #include "conf.h"
 #include "player.h"
+#include "camera.h"
 
 
-#define SOUND_PREFIX       "snd/sounds/" /**< Prefix of where to find sounds. */
 #define SOUND_SUFFIX_WAV   ".wav" /**< Suffix of sounds. */
 #define SOUND_SUFFIX_OGG   ".ogg" /**< Suffix of sounds. */
 
@@ -422,12 +423,31 @@ int sound_playPos( int sound, double px, double py, double vx, double vy )
 {
    alVoice *v;
    alSound *s;
+   Pilot *p;
+   double cx, cy, dist;
+   int target;
 
    if (sound_disabled)
       return 0;
 
    if ((sound < 0) || (sound >= sound_nlist))
       return -1;
+
+   target = cam_getTarget();
+
+   /* Following a pilot. */
+   p = pilot_get(target);
+   if (target && (p != NULL)) {
+      if (!pilot_inRange( p, px, py ))
+         return 0;
+   }
+   /* Set to a position. */
+   else {
+      cam_getPos(&cx, &cy);
+      dist = pow2(px - cx) + pow2(py - cy);
+      if (dist > pilot_sensorRange())
+         return 0;
+   }
 
    /* Gets a new voice. */
    v = voice_new();
@@ -690,7 +710,7 @@ static int sound_makeList (void)
       return 0;
 
    /* get the file list */
-   files = ndata_list( SOUND_PREFIX, &nfiles );
+   files = ndata_list( SOUND_PATH, &nfiles );
 
    /* load the profiles */
    mem = 0;
@@ -725,7 +745,7 @@ static int sound_makeList (void)
 
       /* Load the sound. */
       sound_list[sound_nlist-1].name = strdup(tmp);
-      snprintf( path, PATH_MAX, SOUND_PREFIX"%s", files[i] );
+      nsnprintf( path, PATH_MAX, SOUND_PATH"%s", files[i] );
       if (sound_load( &sound_list[sound_nlist-1], path ))
          sound_nlist--; /* Song not actually added. */
 

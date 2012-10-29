@@ -24,10 +24,11 @@
 
 
 /* global */
-#include <string.h> /* strdup */
+#include "nstring.h" /* strdup */
 
 #if HAS_POSIX
 #include <time.h>
+#include <unistd.h>
 #endif /* HAS_POSIX */
 
 #if defined(HAVE_FENV_H) && defined(DEBUGGING)
@@ -94,12 +95,11 @@
 #include "threadpool.h"
 #include "load.h"
 #include "dialogue.h"
+#include "slots.h"
 
 
 #define CONF_FILE       "conf.lua" /**< Configuration file by default. */
 #define VERSION_FILE    "VERSION" /**< Version file by default. */
-#define FONT_SIZE       12 /**< Normal font size. */
-#define FONT_SIZE_SMALL 10 /**< Small font size. */
 
 #define NAEV_INIT_DELAY 3000 /**< Minimum amount of time_ms to wait with loading screen */
 
@@ -191,10 +191,6 @@ int main( int argc, char** argv )
    /* Set up debug signal handlers. */
    debug_sigInit();
 
-   /* Create the home directory if needed. */
-   if (nfile_dirMakeExist("%s", nfile_basePath()))
-      WARN("Unable to create naev directory '%s'", nfile_basePath());
-
    /* Must be initialized before input_init is called. */
    if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
       WARN("Unable to initialize SDL Video: %s", SDL_GetError());
@@ -218,9 +214,39 @@ int main( int argc, char** argv )
    /* Input must be initialized for config to work. */
    input_init();
 
-   /* Set the configuration. */
-   snprintf(buf, PATH_MAX, "%s"CONF_FILE, nfile_basePath());
    conf_setDefaults(); /* set the default config values */
+
+   /*
+    * Attempts to load the data path from datapath.lua
+    * At this early point in the load process, the binary path
+    * is the only place likely to be checked.
+    */
+   conf_loadConfigPath();
+
+   /* Parse the user data path override first. */
+   conf_parseCLIPath( argc, argv );
+
+   /* Create the home directory if needed. */
+   if (nfile_dirMakeExist("%s", nfile_configPath()))
+      WARN("Unable to create config directory '%s'", nfile_configPath());
+
+   /* Set the configuration. */
+   nsnprintf(buf, PATH_MAX, "%s"CONF_FILE, nfile_configPath());
+
+#if HAS_UNIX
+   /* TODO get rid of this cruft ASAP. */
+   int oldconfig = 0;
+   if (!nfile_fileExists( buf )) {
+      char *home, buf2[PATH_MAX];
+      home = SDL_getenv( "HOME" );
+      if (home != NULL) {
+         nsnprintf( buf2, PATH_MAX, "%s/.naev/"CONF_FILE, home );
+         if (nfile_fileExists( buf2 ))
+            oldconfig = 1;
+      }
+   }
+#endif /* HAS_UNIX */
+
    conf_loadConfig(buf); /* Lua to parse the configuration file */
    conf_parseCLI( argc, argv ); /* parse CLI arguments */
 
@@ -258,8 +284,9 @@ int main( int argc, char** argv )
       exit(EXIT_FAILURE);
    }
    window_caption();
-   gl_fontInit( NULL, NULL, FONT_SIZE ); /* initializes default font to size */
-   gl_fontInit( &gl_smallFont, NULL, FONT_SIZE_SMALL ); /* small font */
+   gl_fontInit( NULL, NULL, conf.font_size_def ); /* initializes default font to size */
+   gl_fontInit( &gl_smallFont, NULL, conf.font_size_small ); /* small font */
+   gl_fontInit( &gl_defFontMono, "dat/mono.ttf", conf.font_size_def );
 
    /* Display the load screen. */
    loadscreen_load();
@@ -316,7 +343,7 @@ int main( int argc, char** argv )
    /* Data loading */
    load_all();
 
-   /* Generate the CVS. */
+   /* Generate the CSV. */
    if (conf.devcsv)
       dev_csv();
 
@@ -330,6 +357,71 @@ int main( int argc, char** argv )
    if ((SDL_GetTicks() - time_ms) < NAEV_INIT_DELAY)
       SDL_Delay( NAEV_INIT_DELAY - (SDL_GetTicks() - time_ms) );
    fps_init(); /* initializes the time_ms */
+
+#if HAS_UNIX
+   /* Tell the player to migrate their configuration files out of ~/.naev */
+   /* TODO get rid of this cruft ASAP. */
+   if ((oldconfig) && (!conf.datapath)) {
+      char path[PATH_MAX], *script, *home;
+      uint32_t scriptsize;
+      int ret;
+
+      nsnprintf( path, PATH_MAX, "%s/naev-confupdate.sh", ndata_getDirname() );
+      home = SDL_getenv("HOME");
+      ret = dialogue_YesNo( "Warning", "Your configuration files are in a deprecated location and must be migrated:\n"
+            "   \er%s/.naev/\e0\n\n"
+            "The update script can likely be found in your Naev data directory:\n"
+            "   \er%s\e0\n\n"
+            "Would you like to run it automatically?", home, path );
+
+      /* Try to run the script. */
+      if (ret) {
+         ret = -1;
+         /* Running from ndata. */
+         if (ndata_getPath() != NULL) {
+            script = ndata_read( "naev-confupdate.sh", &scriptsize );
+            if (script != NULL)
+               ret = system(script);
+         }
+
+         /* Running from laid-out files or ndata_read failed. */
+         if ((nfile_fileExists(path)) && (ret == -1)) {
+            script = nfile_readFile( (int*)&scriptsize, path );
+            if (script != NULL)
+               ret = system(script);
+         }
+
+         /* We couldn't find the script. */
+         if (ret == -1) {
+            dialogue_alert( "The update script was not found at:\n\er%s\e0\n\n"
+                  "Please locate and run it manually.", path );
+         }
+         /* Restart, as the script succeeded. */
+         else if (!ret) {
+            dialogue_msg( "Update Completed",
+                  "Configuration files were successfully migrated. Naev will now restart." );
+            execv(argv[0], argv);
+         }
+         else { /* I sincerely hope this else is never hit. */
+            dialogue_alert( "The update script encountered an error. Please exit Naev and move your config and save files manually:\n\n"
+                  "\er%s/%s\e0 =>\n   \eD%s\e0\n\n"
+                  "\er%s/%s\e0 =>\n   \eD%s\e0\n\n"
+                  "\er%s/%s\e0 =>\n   \eD%snebula/\e0\n\n",
+                  home, ".naev/conf.lua", nfile_configPath(),
+                  home, ".naev/{saves,screenshots}/", nfile_dataPath(),
+                  home, ".naev/gen/*.png", nfile_cachePath() );
+         }
+      }
+      else {
+         dialogue_alert(
+               "To manually migrate your configuration files "
+               "please exit Naev and run the update script, "
+               "likely found in your Naev data directory:\n"
+               "   \er%s/naev-confupdate.sh\e0", home, path );
+      }
+   }
+#endif
+
    /*
     * main loop
     */
@@ -362,6 +454,7 @@ int main( int argc, char** argv )
    /* cleanup opengl fonts */
    gl_freeFont(NULL);
    gl_freeFont(&gl_smallFont);
+   gl_freeFont(&gl_defFontMono);
 
    /* Close data. */
    ndata_close();
@@ -414,7 +507,7 @@ void loadscreen_load (void)
    uint32_t nload;
 
    /* Count the loading screens */
-   loadscreens = ndata_list( "gfx/loading/", &nload );
+   loadscreens = ndata_list( GFX_PATH"loading/", &nload );
 
    /* Must have loading screens */
    if (nload==0) {
@@ -427,7 +520,7 @@ void loadscreen_load (void)
    cam_setZoom( conf.zoom_far );
 
    /* Load the texture */
-   snprintf( file_path, PATH_MAX, "gfx/loading/%s", loadscreens[ RNG_SANE(0,nload-1) ] );
+   nsnprintf( file_path, PATH_MAX, GFX_PATH"loading/%s", loadscreens[ RNG_SANE(0,nload-1) ] );
    loading = gl_newImage( file_path, 0 );
 
    /* Create the stars. */
@@ -529,6 +622,9 @@ static void loadscreen_unload (void)
 #define LOADING_STAGES     12. /**< Amount of loading stages. */
 void load_all (void)
 {
+   /* We can do fast stuff here. */
+   sp_load();
+
    /* order is very important as they're interdependent */
    loadscreen_render( 1./LOADING_STAGES, "Loading Commodities..." );
    commodity_load(); /* dep for space */
@@ -554,6 +650,8 @@ void load_all (void)
    tech_load(); /* dep for space */
    loadscreen_render( 11./LOADING_STAGES, "Loading the Universe..." );
    space_load();
+   loadscreen_render( 12./LOADING_STAGES, "Populating Maps..." );
+   outfit_mapParse();
    background_init();
    player_init(); /* Initialize player stuff. */
    loadscreen_render( 1., "Loading Completed!" );
@@ -586,6 +684,7 @@ void unload_all (void)
    factions_free();
    commodity_free();
    var_cleanup(); /* cleans up mission variables */
+   sp_cleanup();
 }
 
 
@@ -883,13 +982,13 @@ static void window_caption (void)
    npng_t *npng;
 
    /* Set caption. */
-   snprintf(buf, PATH_MAX ,APPNAME" - %s", ndata_name());
+   nsnprintf(buf, PATH_MAX ,APPNAME" - %s", ndata_name());
    SDL_WM_SetCaption(buf, APPNAME);
 
    /* Set icon. */
-   rw = ndata_rwops( "gfx/icon.png" );
+   rw = ndata_rwops( GFX_PATH"icon.png" );
    if (rw == NULL) {
-      WARN("Icon (gfx/icon.png) not found!");
+      WARN("Icon (icon.png) not found!");
       return;
    }
    npng        = npng_open( rw );
@@ -897,7 +996,7 @@ static void window_caption (void)
    npng_close( npng );
    SDL_RWclose( rw );
    if (naev_icon == NULL) {
-      WARN("Unable to load gfx/icon.png!");
+      WARN("Unable to load icon.png!");
       return;
    }
    SDL_WM_SetIcon( naev_icon, NULL );
@@ -914,7 +1013,7 @@ char *naev_version( int long_version )
 {
    /* Set short version if needed. */
    if (short_version[0] == '\0')
-      snprintf( short_version, sizeof(short_version),
+      nsnprintf( short_version, sizeof(short_version),
 #if VREV < 0
             "%d.%d.0-beta%d",
             VMAJOR, VMINOR, ABS(VREV)
@@ -927,7 +1026,7 @@ char *naev_version( int long_version )
    /* Set up the long version. */
    if (long_version) {
       if (human_version[0] == '\0')
-         snprintf( human_version, sizeof(human_version),
+         nsnprintf( human_version, sizeof(human_version),
                " "APPNAME" v%s%s - %s", short_version,
 #ifdef DEBUGGING
                " debug",

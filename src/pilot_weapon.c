@@ -38,6 +38,9 @@
 #include "weapon.h"
 #include "escort.h"
 
+#include "player.h"
+#include "spfx.h"
+
 
 /*
  * Prototypes.
@@ -72,7 +75,7 @@ static PilotWeaponSet* pilot_weapSet( Pilot* p, int id )
  */
 static int pilot_weapSetFire( Pilot *p, PilotWeaponSet *ws, int level )
 {
-   int i, j, ret, s, recalc, ooe, can_use;
+   int i, j, ret, s;
    Pilot *pt;
    double dist2;
    Outfit *o;
@@ -82,22 +85,18 @@ static int pilot_weapSetFire( Pilot *p, PilotWeaponSet *ws, int level )
       return 0;
 
    /* If inrange is set we only fire at targets in range. */
+   dist2 = INFINITY; /* With no target we just set distance to infinity. */
+
    if (ws->inrange) {
-      if (p->target == p->id)
-         dist2 = INFINITY; /* With no target we just set distance to infinity. */
-      else {
+      if (p->target != p->id) {
          pt = pilot_get( p->target );
-         if (pt == NULL)
-            dist2 = INFINITY;
-         else
+         if (pt != NULL)
             dist2 = vect_dist2( &p->solid->pos, &pt->solid->pos );
       }
    }
 
    /* Fire. */
-   recalc = 0;
    ret    = 0;
-   ooe    = (p->energy <= 0.);
    for (i=0; i<array_size(ws->slots); i++) {
       o = ws->slots[i].slot->outfit;
 
@@ -108,23 +107,6 @@ static int pilot_weapSetFire( Pilot *p, PilotWeaponSet *ws, int level )
       /* Only "active" outfits. */
       if ((level != -1) && (ws->slots[i].level != level))
          continue;
-
-      /* Modifications get a special deal. */
-      if (outfit_isMod(o)) {
-         can_use = ((o->u.mod.energy_regen >= 0.) || !ooe);
-         if ((ws->slots[i].slot->state == PILOT_OUTFIT_OFF) && can_use) {
-            ws->slots[i].slot->state  = PILOT_OUTFIT_ON;
-            ws->slots[i].slot->stimer = outfit_duration( ws->slots[i].slot->outfit );
-            recalc = 1;
-         }
-         else if (!can_use) {
-            if (ws->slots[i].slot->state != PILOT_OUTFIT_OFF) {
-               ws->slots[i].slot->state = PILOT_OUTFIT_OFF;
-               recalc = 1;
-            }
-         }
-         continue;
-      }
 
       /* Only run once for each weapon type in the group. */
       s = 0;
@@ -148,16 +130,12 @@ static int pilot_weapSetFire( Pilot *p, PilotWeaponSet *ws, int level )
 
       /* Only "inrange" outfits. */
       if (!outfit_isFighterBay(o) &&
-            ws->inrange && (dist2 > ws->slots[i].range2))
+            (ws->inrange && (dist2 > ws->slots[i].range2)))
          continue;
 
       /* Shoot the weapon of the weaponset. */
       ret += pilot_shootWeaponSetOutfit( p, ws, o, level );
    }
-
-   /* Must recalculate. */
-   if (recalc)
-      pilot_calcStats( p );
 
    return ret;
 }
@@ -190,6 +168,9 @@ void pilot_weapSetPress( Pilot* p, int id, int type )
    PilotWeaponSet *ws;
 
    ws = pilot_weapSet(p,id);
+   /* Case no outfits. */
+   if (ws->slots == NULL)
+      return;
 
    /* Handle fire groups. */
    switch (ws->type) {
@@ -212,13 +193,17 @@ void pilot_weapSetPress( Pilot* p, int id, int type )
          break;
 
       case WEAPSET_TYPE_ACTIVE:
-         /* The behaviour here is more complex. WHat we do is consider a group
+         /* The behaviour here is more complex. What we do is consider a group
           * to be entirely off if not all outfits are either on or cooling down.
           * In the case it's deemed to be off, all outfits that are off get turned
           * on, otherwise all outfits that are on are turrned to cooling down. */
          /* Only care about presses. */
          if (type < 0)
             break;
+
+         /* Must not be disabled or cooling down. */
+         if ((pilot_isDisabled(p)) || (pilot_isFlag(p, PILOT_COOLDOWN)))
+            return;
 
          /* Decide what to do. */
          on = 1;
@@ -233,21 +218,19 @@ void pilot_weapSetPress( Pilot* p, int id, int type )
          /* Turn them off. */
          n = 0;
          if (on) {
-            for (i=0; i<l; i++) {
-               if (ws->slots[i].slot->state != PILOT_OUTFIT_ON)
-                  continue;
-               ws->slots[i].slot->state  = PILOT_OUTFIT_COOLDOWN;
-               ws->slots[i].slot->stimer = outfit_cooldown( ws->slots[i].slot->outfit );
-               n++;
-            }
+            pilot_outfitOffAll( p );
          }
          /* Turn them on. */
          else {
             for (i=0; i<l; i++) {
                if (ws->slots[i].slot->state != PILOT_OUTFIT_OFF)
                   continue;
-               ws->slots[i].slot->state  = PILOT_OUTFIT_ON;
-               ws->slots[i].slot->stimer = outfit_duration( ws->slots[i].slot->outfit );
+               if (outfit_isAfterburner(ws->slots[i].slot->outfit))
+                  pilot_afterburn( p );
+               else {
+                  ws->slots[i].slot->state  = PILOT_OUTFIT_ON;
+                  ws->slots[i].slot->stimer = outfit_duration( ws->slots[i].slot->outfit );
+               }
                n++;
             }
          }
@@ -409,7 +392,7 @@ void pilot_weapSetRmSlot( Pilot *p, int id, OutfitSlotType type )
       return;
    l  = array_size(ws->slots);
    for (i=0; i<l; i++) {
-      if (ws->slots->slot->slot.type != type)
+      if (ws->slots->slot->sslot->slot.type != type)
          continue;
 
       /* Move down. */
@@ -741,7 +724,9 @@ int pilot_shoot( Pilot* p, int level )
    ws = pilot_weapSet( p, p->active_set );
 
    /* Fire weapons. */
-   return pilot_weapSetFire( p, ws, level );
+   if (ws->type == WEAPSET_TYPE_CHANGE) /* Must be a change set or a weaponset. */
+      return pilot_weapSetFire( p, ws, level );
+   return 0;
 }
 
 
@@ -973,7 +958,7 @@ static int pilot_shootWeapon( Pilot* p, PilotOutfitSlot* w )
       energy      = outfit_energy(w->u.ammo.outfit)*energy_mod;
       p->energy  -= energy;
       pilot_heatAddSlot( p, w );
-      weapon_add( w->u.ammo.outfit, w->heat_T, p->solid->dir,
+      weapon_add( w->outfit, w->heat_T, p->solid->dir,
             &vp, &p->solid->vel, p, p->target );
 
       w->u.ammo.quantity -= 1; /* we just shot it */
@@ -1220,3 +1205,116 @@ void pilot_weaponSane( Pilot *p )
    pilot_weapSetUpdateRange( ws );
 }
 
+/**
+ * @brief Disables a given active outfit.
+ *
+ * @param p Pilot whose outfit we are disabling.
+ * @return Whether the outfit was actually disabled.
+ */
+int pilot_outfitOff( Pilot *p, PilotOutfitSlot *o )
+{
+   /* Must not be disabled or cooling down. */
+   if ((pilot_isDisabled(p)) || (pilot_isFlag(p, PILOT_COOLDOWN)))
+      return 0;
+
+   if (outfit_isAfterburner( o->outfit )) /* Afterburners */
+      pilot_afterburnOver( p );
+   else {
+      o->stimer = outfit_cooldown( o->outfit );
+      o->state  = PILOT_OUTFIT_COOLDOWN;
+   }
+
+   return 1;
+}
+
+/**
+ * @brief Disables all active outfits for a pilot.
+ *
+ * @param p Pilot whose outfits we are disabling.
+ * @return Whether any outfits were actually disabled.
+ */
+int pilot_outfitOffAll( Pilot *p )
+{
+   PilotOutfitSlot *o;
+   int nchg;
+   int i;
+
+   nchg = 0;
+   for (i=0; i<p->noutfits; i++) {
+      o = p->outfits[i];
+      /* Picky about our outfits. */
+      if (o->outfit == NULL)
+         continue;
+      if (!o->active)
+         continue;
+      if (o->state == PILOT_OUTFIT_ON)
+         nchg += pilot_outfitOff( p, o );
+   }
+   return (nchg > 0);
+}
+
+/**
+ * @brief Activate the afterburner.
+ */
+void pilot_afterburn (Pilot *p)
+{
+   double afb_mod;
+
+   if (p == NULL)
+      return;
+
+   if (pilot_isFlag(p, PILOT_HYP_PREP) || pilot_isFlag(p, PILOT_HYPERSPACE) ||
+         pilot_isFlag(p, PILOT_LANDING) || pilot_isFlag(p, PILOT_TAKEOFF) ||
+         pilot_isDisabled(p) || pilot_isFlag(p, PILOT_COOLDOWN))
+      return;
+
+   /* Not under manual control. */
+   if (pilot_isFlag( p, PILOT_MANUAL_CONTROL ))
+      return;
+
+   /** @todo fancy effect? */
+   if (p->afterburner == NULL)
+      return;
+
+   /* The afterburner only works if its efficiency is high enough. */
+   if (pilot_heatEfficiencyMod( p->afterburner->heat_T,
+         p->afterburner->outfit->u.afb.heat_base,
+         p->afterburner->outfit->u.afb.heat_cap ) < 0.3)
+      return;
+
+   if (p->afterburner->state == PILOT_OUTFIT_OFF) {
+      p->afterburner->state  = PILOT_OUTFIT_ON;
+      p->afterburner->stimer = outfit_duration( p->afterburner->outfit );
+      pilot_setFlag(p,PILOT_AFTERBURNER);
+      pilot_calcStats( p );
+
+      /* @todo Make this part of a more dynamic activated outfit sound system. */
+      sound_play(p->afterburner->outfit->u.afb.sound_on);
+   }
+
+   if (pilot_isPlayer(p)) {
+      afb_mod = MIN( 1., player.p->afterburner->outfit->u.afb.mass_limit / player.p->solid->mass );
+      spfx_shake( afb_mod * player.p->afterburner->outfit->u.afb.rumble * SHAKE_MAX );
+   }
+}
+
+
+/**
+ * @brief Deactivates the afterburner.
+ */
+void pilot_afterburnOver (Pilot *p)
+{
+   if (p == NULL)
+      return;
+   if (p->afterburner == NULL)
+      return;
+
+   if (p->afterburner->state == PILOT_OUTFIT_ON) {
+      p->afterburner->state  = PILOT_OUTFIT_OFF;
+      pilot_rmFlag(p,PILOT_AFTERBURNER);
+      pilot_calcStats( p );
+
+      /* @todo Make this part of a more dynamic activated outfit sound system. */
+      sound_play(p->afterburner->outfit->u.afb.sound_off);
+   }
+}

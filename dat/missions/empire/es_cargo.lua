@@ -3,9 +3,9 @@
    Handles the randomly generated Empire cargo missions.
 
 ]]--
-include "scripts/jumpdist.lua"
-include "scripts/cargo_common.lua"
-include "scripts/numstring.lua"
+include "jumpdist.lua"
+include "cargo_common.lua"
+include "numstring.lua"
 
 lang = naev.lang()
 if lang == "es" then
@@ -136,9 +136,7 @@ function land()
         end
 
         -- increase faction
-        if faction.playerStanding("Empire") < 50 then
-            faction.modPlayerSingle("Empire", rnd.rnd(2, 4))
-        end
+        faction.modPlayerSingle("Empire", rnd.rnd(2, 4))
         misn.finish(true)
     end
 end

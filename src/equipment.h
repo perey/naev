@@ -13,13 +13,6 @@
 
 
 /*
- * Image array names.
- */
-#define  EQUIPMENT_SHIPS      "iarAvailShips"
-#define  EQUIPMENT_OUTFITS    "iarAvailOutfits"
-
-
-/*
  * Main.
  */
 void equipment_open( unsigned int wid );
@@ -33,7 +26,6 @@ void equipment_addAmmo (void);
 void equipment_regenLists( unsigned int wid, int outfits, int ships );
 void equipment_updateShips( unsigned int wid, char* str );
 void equipment_updateOutfits( unsigned int wid, char* str );
-void equipment_setGui( unsigned int wid, char* str );
 int equipment_shipStats( char *buf, int max_len,  const Pilot *s, int dpseps );
 
 

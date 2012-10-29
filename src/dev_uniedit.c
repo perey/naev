@@ -24,19 +24,29 @@
 #include "dialogue.h"
 #include "tk/toolkit_priv.h"
 #include "dev_sysedit.h"
+#include "pause.h"
+#include "nfile.h"
+#include "nstring.h"
 
+
+#define HIDE_DEFAULT_JUMP        1.25 /**< Default hide value for new jumps. */
+#define RADIUS_DEFAULT           10000 /**< Default radius for new systems. */
+#define STARS_DENSITY_DEFAULT    400 /**< Default stars density for new systems. */
 
 #define BUTTON_WIDTH    80 /**< Map button width. */
 #define BUTTON_HEIGHT   30 /**< Map button height. */
 
 
 #define UNIEDIT_EDIT_WIDTH       400 /**< System editor width. */
-#define UNIEDIT_EDIT_HEIGHT      300 /**< System editor height. */
+#define UNIEDIT_EDIT_HEIGHT      450 /**< System editor height. */
 
 
 #define UNIEDIT_DRAG_THRESHOLD   300   /**< Drag threshold. */
 #define UNIEDIT_MOVE_THRESHOLD   10    /**< Movement threshold. */
 
+#define UNIEDIT_ZOOM_STEP        1.2   /**< Factor to zoom by for each zoom level. */
+#define UNIEDIT_ZOOM_MAX         5     /**< Maximum uniedit zoom level (close). */
+#define UNIEDIT_ZOOM_MIN         -5    /**< Minimum uniedit zoom level (far). */
 
 /*
  * The editor modes.
@@ -75,7 +85,6 @@ static double uniedit_my      = 0.; /**< Y mouse position. */
 static void uniedit_deselect (void);
 static void uniedit_selectAdd( StarSystem *sys );
 static void uniedit_selectRm( StarSystem *sys );
-static void uniedit_selectText (void);
 /* System editing. */
 static void uniedit_editSys (void);
 static void uniedit_editSysClose( unsigned int wid, char *name );
@@ -97,7 +106,7 @@ static void uniedit_jumpRm( StarSystem *sys, StarSystem *targ );
 static void uniedit_buttonZoom( unsigned int wid, char* str );
 static void uniedit_render( double bx, double by, double w, double h, void *data );
 static void uniedit_renderOverlay( double bx, double by, double bw, double bh, void* data );
-static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double my,
+static int uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double my,
       double w, double h, void *data );
 /* Button functions. */
 static void uniedit_close( unsigned int wid, char *wgt );
@@ -119,6 +128,9 @@ void uniedit_open( unsigned int wid_unused, char *unused )
    (void) wid_unused;
    (void) unused;
    unsigned int wid;
+
+   /* Pause. */
+   pause_game();
 
    /* Needed to generate faction disk. */
    map_setZoom( 1. );
@@ -145,9 +157,9 @@ void uniedit_open( unsigned int wid_unused, char *unused )
    window_addButton( wid, -20, 20, BUTTON_WIDTH, BUTTON_HEIGHT,
          "btnClose", "Close", uniedit_close );
 
-   /*Save button. */
+   /* Save button. */
    window_addButton( wid, -20, 20+(BUTTON_HEIGHT+20)*1, BUTTON_WIDTH, BUTTON_HEIGHT,
-         "btnSave", "Save", uniedit_save );
+         "btnSave", "Save All", uniedit_save );
 
    /* Jump toggle. */
    window_addButton( wid, -20, 20+(BUTTON_HEIGHT+20)*3, BUTTON_WIDTH, BUTTON_HEIGHT,
@@ -242,12 +254,14 @@ static void uniedit_close( unsigned int wid, char *wgt )
    /* Reconstruct jumps. */
    systems_reconstructJumps();
 
+   /* Unpause. */
+   unpause_game();
+
    /* Close the window. */
    window_close( wid, wgt );
 }
 
-
-/**
+/*
  * @brief Saves the systems.
  */
 static void uniedit_save( unsigned int wid_unused, char *unused )
@@ -376,7 +390,7 @@ static void uniedit_renderOverlay( double bx, double by, double bw, double bh, v
 /**
  * @brief System editor custom widget mouse handling.
  */
-static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double my,
+static int uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double my,
       double w, double h, void *data )
 {
    (void) wid;
@@ -396,13 +410,17 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
       case SDL_MOUSEBUTTONDOWN:
          /* Must be in bounds. */
          if ((mx < 0.) || (mx > w) || (my < 0.) || (my > h))
-            return;
+            return 0;
 
          /* Zooming */
-         if (event->button.button == SDL_BUTTON_WHEELUP)
+         if (event->button.button == SDL_BUTTON_WHEELUP) {
             uniedit_buttonZoom( 0, "btnZoomIn" );
-         else if (event->button.button == SDL_BUTTON_WHEELDOWN)
+            return 1;
+         }
+         else if (event->button.button == SDL_BUTTON_WHEELDOWN) {
             uniedit_buttonZoom( 0, "btnZoomOut" );
+            return 1;
+         }
 
          /* selecting star system */
          else {
@@ -412,7 +430,7 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
             if (uniedit_mode == UNIEDIT_NEWSYS) {
                uniedit_newSys( mx, my );
                uniedit_mode = UNIEDIT_DEFAULT;
-               return;
+               return 1;
             }
 
             for (i=0; i<systems_nstack; i++) {
@@ -435,7 +453,7 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
                            && (uniedit_moved < UNIEDIT_MOVE_THRESHOLD)) {
                         if (uniedit_nsys == 1) {
                            sysedit_open( uniedit_sys[0] );
-                           return;
+                           return 1;
                         }
                      }
 
@@ -452,7 +470,7 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
                         uniedit_dragTime  = SDL_GetTicks();
                         uniedit_moved     = 0;
                      }
-                     return;
+                     return 1;
                   }
 
                   if (uniedit_mode == UNIEDIT_DEFAULT) {
@@ -474,7 +492,7 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
                      uniedit_toggleJump( sys );
                      uniedit_mode = UNIEDIT_DEFAULT;
                   }
-                  return;
+                  return 1;
                }
             }
 
@@ -485,7 +503,7 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
                uniedit_moved     = 0;
                uniedit_tsys      = NULL;
             }
-            return;
+            return 1;
          }
          break;
 
@@ -510,6 +528,9 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
                }
             }
             uniedit_dragSys   = 0;
+            for (i=0; i<uniedit_nsys; i++) {
+               dsys_saveSystem(uniedit_sys[i]);
+            }
          }
          break;
 
@@ -540,6 +561,8 @@ static void uniedit_mouse( unsigned int wid, SDL_Event* event, double mx, double
          }
          break;
    }
+
+   return 0;
 }
 
 
@@ -563,13 +586,34 @@ static int uniedit_checkName( char *name )
 }
 
 
+char *uniedit_nameFilter( char *name )
+{
+   int i, pos;
+   char *out;
+
+   out = calloc( 1, (strlen(name)+1)  );
+   pos = 0;
+   for (i=0; i<(int)strlen(name); i++) {
+      if (!ispunct(name[i])) {
+         if (name[i] == ' ')
+            out[pos] = '_';
+         else
+            out[pos] = tolower(name[i]);
+         pos++;
+      }
+   }
+
+   return out;
+}
+
+
 /**
  * @brief Renames all the currently selected systems.
  */
 static void uniedit_renameSys (void)
 {
-   int i;
-   char *name;
+   int i, j;
+   char *name, *oldName, *newName;
    StarSystem *sys;
 
    for (i=0; i<uniedit_nsys; i++) {
@@ -590,8 +634,20 @@ static void uniedit_renameSys (void)
       }
 
       /* Change the name. */
+      oldName = malloc((14+strlen(sys->name)));
+      nsnprintf(oldName,14+strlen(sys->name),"dat/ssys/%s.xml", uniedit_nameFilter(sys->name) );
+      newName = malloc(14+strlen(name));
+      nsnprintf(newName,14+strlen(name),"dat/ssys/%s.xml", uniedit_nameFilter(name) );
+      nfile_rename(oldName,newName);
+      free(oldName);
+      free(newName);
       free(sys->name);
       sys->name = name;
+      dsys_saveSystem(sys);
+
+      /* Re-save adjacent systems. */
+      for (j=0; j<sys->njumps; j++)
+         dsys_saveSystem( sys->jumps[j].target );
    }
 }
 
@@ -620,17 +676,23 @@ static void uniedit_newSys( double x, double y )
       return;
    }
 
+   /* Transform coordinates back to normal if zoomed */
+   x /= uniedit_zoom;
+   y /= uniedit_zoom;
+
    /* Create the system. */
    sys         = system_new();
    sys->name   = name;
    sys->pos.x  = x;
    sys->pos.y  = y;
-   sys->stars  = 400;
-   sys->radius = 10000.;
+   sys->stars  = STARS_DENSITY_DEFAULT;
+   sys->radius = RADIUS_DEFAULT;
 
    /* Select new system. */
    uniedit_deselect();
    uniedit_selectAdd( sys );
+
+   dsys_saveSystem( sys );
 }
 
 
@@ -664,6 +726,15 @@ static void uniedit_toggleJump( StarSystem *sys )
 
    /* Reconstruct jumps just in case. */
    systems_reconstructJumps();
+
+   /* Reconstruct universe presences. */
+   space_reconstructPresences();
+
+   dsys_saveSystem( sys );
+   dsys_saveSystem( isys );
+
+   /* Update sidebar text. */
+   uniedit_selectText();
 }
 
 
@@ -678,13 +749,14 @@ static void uniedit_jumpAdd( StarSystem *sys, StarSystem *targ )
    sys->njumps++;
    sys->jumps  = realloc( sys->jumps, sizeof(JumpPoint) * sys->njumps );
    jp          = &sys->jumps[ sys->njumps-1 ];
+   memset( jp, 0, sizeof(JumpPoint) );
 
    /* Fill it out with basics. */
    jp->target  = targ;
    jp->targetid = targ->id;
    jp->radius  = 200.;
    jp->flags   = JP_AUTOPOS; /* Will automatically create position. */
-
+   jp->hide    = pow2(HIDE_DEFAULT_JUMP);
 }
 
 
@@ -789,7 +861,7 @@ static void uniedit_selectRm( StarSystem *sys )
 /**
  * @brief Sets the selected system text.
  */
-static void uniedit_selectText (void)
+void uniedit_selectText (void)
 {
    int i, l;
    char buf[1024];
@@ -798,7 +870,7 @@ static void uniedit_selectText (void)
 
    l = 0;
    for (i=0; i<uniedit_nsys; i++) {
-      l += snprintf( &buf[l], sizeof(buf)-l, "%s%s", uniedit_sys[i]->name,
+      l += nsnprintf( &buf[l], sizeof(buf)-l, "%s%s", uniedit_sys[i]->name,
             (i == uniedit_nsys-1) ? "" : ", " );
    }
    if (l == 0)
@@ -821,12 +893,12 @@ static void uniedit_selectText (void)
 
             hasPresence = 1;
             /* Use map grey instead of default neutral colour */
-            l += snprintf( &buf[l], sizeof(buf)-l, "%s\e0%s: %.0f",
+            l += nsnprintf( &buf[l], sizeof(buf)-l, "%s\e0%s: %.0f",
                   (l==0)?"":"\n", faction_name(sys->presence[i].faction),
                   sys->presence[i].value);
          }
          if (hasPresence == 0)
-            snprintf( buf, sizeof(buf), "None" );
+            nsnprintf( buf, sizeof(buf), "None" );
 
          window_modifyText( uniedit_wid, "txtPresence", buf );
       }
@@ -852,12 +924,12 @@ static void uniedit_buttonZoom( unsigned int wid, char* str )
 
    /* Apply zoom. */
    if (strcmp(str,"btnZoomIn")==0) {
-      uniedit_zoom *= 1.2;
-      uniedit_zoom = MIN(2.5, uniedit_zoom);
+      uniedit_zoom *= UNIEDIT_ZOOM_STEP;
+      uniedit_zoom = MIN(pow(UNIEDIT_ZOOM_STEP, UNIEDIT_ZOOM_MAX), uniedit_zoom);
    }
    else if (strcmp(str,"btnZoomOut")==0) {
-      uniedit_zoom *= 0.8;
-      uniedit_zoom = MAX(0.5, uniedit_zoom);
+      uniedit_zoom /= UNIEDIT_ZOOM_STEP;
+      uniedit_zoom = MAX(pow(UNIEDIT_ZOOM_STEP, UNIEDIT_ZOOM_MIN), uniedit_zoom);
    }
 
    /* Hack for the circles to work. */
@@ -875,16 +947,20 @@ static void uniedit_buttonZoom( unsigned int wid, char* str )
 static void uniedit_editSys (void)
 {
    unsigned int wid;
-   int y;
-   char buf[128];
+   int x, y, l;
+   char buf[128], *s;
+   StarSystem *sys;
 
    /* Must have a system. */
    if (uniedit_nsys == 0)
       return;
+   sys   = uniedit_sys[0];
 
    /* Create the window. */
    wid = window_create( "Star System Property Editor", -1, -1, UNIEDIT_EDIT_WIDTH, UNIEDIT_EDIT_HEIGHT );
    uniedit_widEdit = wid;
+
+   x = 20;
 
    /* Close button. */
    window_addButton( wid, -20, 20, BUTTON_WIDTH, BUTTON_HEIGHT,
@@ -892,10 +968,78 @@ static void uniedit_editSys (void)
 
    /* Rename button. */
    y = -45;
-   snprintf( buf, sizeof(buf), "Name: \en%s", (uniedit_nsys > 1) ? "\ervarious" : uniedit_sys[0]->name );
-   window_addText( wid, 20, y, 180, 15, 0, "txtName", &gl_smallFont, &cDConsole, buf );
+   nsnprintf( buf, sizeof(buf), "Name: \en%s", (uniedit_nsys > 1) ? "\ervarious" : uniedit_sys[0]->name );
+   window_addText( wid, x, y, 180, 15, 0, "txtName", &gl_smallFont, &cDConsole, buf );
    window_addButton( wid, 200, y+3, BUTTON_WIDTH, 21, "btnRename", "Rename", uniedit_btnEditRename );
-   y -= 30;
+
+   /* Add general stats */
+   s = "Radius";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtRadius",
+         NULL, &cBlack, s );
+   window_addInput( wid, x += l + 7, y, 80, 20, "inpRadius", 10, 1, NULL );
+   window_setInputFilter( wid, "inpRadius",
+         "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}()-=*/\\'\"~<>!@#$%^&|_`" );
+   x += 80 + 12;
+   s = "(Scales asset positions)";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtRadiusComment",
+         NULL, &cBlack, s );
+
+   /* New row. */
+   x = 20;
+   y -= gl_defFont.h + 15;
+   
+   s = "Stars";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtStars",
+         NULL, &cBlack, s );
+   window_addInput( wid, x += l + 7, y, 50, 20, "inpStars", 4, 1, NULL );
+   window_setInputFilter( wid, "inpStars",
+         "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}()-=*/\\'\"~<>!@#$%^&|_`" );
+   x += 50 + 12;
+
+   s = "Interference";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtInterference",
+         NULL, &cBlack, s );
+   window_addInput( wid, x += l + 7, y, 55, 20, "inpInterference", 5, 1, NULL );
+   window_setInputFilter( wid, "inpInterference",
+         "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}()-=*/\\'\"~<>!@#$%^&|_`" );
+
+   /* New row. */
+   x = 20;
+   y -= gl_defFont.h + 15;
+
+   s = "Nebula";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtNebula",
+         NULL, &cBlack, s );
+   window_addInput( wid, x += l + 7, y, 50, 20, "inpNebula", 4, 1, NULL );
+   window_setInputFilter( wid, "inpNebula",
+         "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}()-=*/\\'\"~<>!@#$%^&|_`" );
+   x += 50 + 12;
+
+   s = "Volatility";
+   l = gl_printWidthRaw( NULL, s );
+   window_addText( wid, x, y, l, 20, 1, "txtVolatility",
+         NULL, &cBlack, s );
+   window_addInput( wid, x += l + 7, y, 50, 20, "inpVolatility", 4, 1, NULL );
+   window_setInputFilter( wid, "inpVolatility",
+         "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{}()-=*/\\'\"~<>!@#$%^&|_`" );
+   x += 50 + 12;
+
+   /* Load values */
+   nsnprintf( buf, sizeof(buf), "%g", sys->radius );
+   window_setInput( wid, "inpRadius", buf );
+   nsnprintf( buf, sizeof(buf), "%d", sys->stars );
+   window_setInput( wid, "inpStars", buf );
+   nsnprintf( buf, sizeof(buf), "%g", sys->interference );
+   window_setInput( wid, "inpInterference", buf );
+   nsnprintf( buf, sizeof(buf), "%g", sys->nebu_density );
+   window_setInput( wid, "inpNebula", buf );
+   nsnprintf( buf, sizeof(buf), "%g", sys->nebu_volatility );
+   window_setInput( wid, "inpVolatility", buf );
 
    /* Generate the list. */
    uniedit_editGenList( wid );
@@ -917,7 +1061,7 @@ static void uniedit_editGenList( unsigned int wid )
    if (widget_exists( wid, "lstAssets" ))
       window_destroyWidget( wid, "lstAssets" );
 
-   y = -75;
+   y = -175;
 
    /* Check to see if it actually has virtual assets. */
    sys   = uniedit_sys[0];
@@ -962,12 +1106,32 @@ static void uniedit_editGenList( unsigned int wid )
 
 
 /**
- * @brief Closes the system property editor.
+ * @brief Closes the system property editor, saving the changes made.
  */
 static void uniedit_editSysClose( unsigned int wid, char *name )
 {
+   StarSystem *sys;
+   double scale;
+   
+   /* We already know the system exists because we checked when opening the dialog. */
+   sys   = uniedit_sys[0];
+
+   /* Changes in radius need to scale the system asset positions. */
+   scale = atof(window_getInput( wid, "inpRadius" )) / sys->radius;
+   sysedit_sysScale(sys, scale);
+
+   sys->stars           = atoi(window_getInput( wid, "inpStars" ));
+   sys->interference    = atof(window_getInput( wid, "inpInterference" ));
+   sys->nebu_density    = atof(window_getInput( wid, "inpNebula" ));
+   sys->nebu_volatility = atof(window_getInput( wid, "inpVolatility" ));
+
+   /* Reconstruct universe presences. */
+   space_reconstructPresences();
+
    /* Text might need changing. */
    uniedit_selectText();
+
+   dsys_saveSystem( uniedit_sys[0] );
 
    /* Close the window. */
    window_close( wid, name );
@@ -1002,7 +1166,7 @@ static void uniedit_btnEditRmAsset( unsigned int wid, char *unused )
 
 
 /**
- * @brief Adds a new asset.
+ * @brief Adds a new virtual asset.
  */
 static void uniedit_btnEditAddAsset( unsigned int parent, char *unused )
 {
@@ -1050,7 +1214,7 @@ static void uniedit_btnEditAddAsset( unsigned int parent, char *unused )
 
 
 /**
- * @brief Actually adds the asset.
+ * @brief Actually adds the virtual asset.
  */
 static void uniedit_btnEditAddAssetAdd( unsigned int wid, char *unused )
 {
@@ -1072,6 +1236,8 @@ static void uniedit_btnEditAddAssetAdd( unsigned int wid, char *unused )
    /* Regenerate the list. */
    uniedit_editGenList( uniedit_widEdit );
 
+   dsys_saveSystem( uniedit_sys[0] );
+
    /* Close the window. */
    window_close( wid, unused );
 }
@@ -1089,7 +1255,7 @@ static void uniedit_btnEditRename( unsigned int wid, char *unused )
    uniedit_renameSys();
 
    /* Update text. */
-   snprintf( buf, sizeof(buf), "Name: %s", (uniedit_nsys > 1) ? "\ervarious" : uniedit_sys[0]->name );
+   nsnprintf( buf, sizeof(buf), "Name: %s", (uniedit_nsys > 1) ? "\ervarious" : uniedit_sys[0]->name );
    window_modifyText( wid, "txtName", buf );
 }
 

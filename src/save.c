@@ -16,6 +16,7 @@
 
 #include "log.h"
 #include "nxml.h"
+#include "nstring.h"
 #include "player.h"
 #include "dialogue.h"
 #include "menu.h"
@@ -25,6 +26,7 @@
 #include "unidiff.h"
 #include "nlua_var.h"
 #include "event.h"
+#include "news.h"
 #include "conf.h"
 #include "land.h"
 #include "gui.h"
@@ -44,6 +46,8 @@ extern int player_save( xmlTextWriterPtr writer ); /**< Saves player related stu
 extern int missions_saveActive( xmlTextWriterPtr writer ); /**< Saves active missions. */
 /* event.c */
 extern int events_saveActive( xmlTextWriterPtr writer );
+/* news.c */
+extern int news_saveArticles( xmlTextWriterPtr writer );
 /* nlua_var.c */
 extern int var_save( xmlTextWriterPtr writer ); /**< Saves mission variables. */
 /* faction.c */
@@ -71,6 +75,7 @@ static int save_data( xmlTextWriterPtr writer )
    if (player_save(writer) < 0) return -1;
    if (missions_saveActive(writer) < 0) return -1;
    if (events_saveActive(writer) < 0) return -1;
+   if (news_saveArticles( writer ) < 0) return -1;
    if (var_save(writer) < 0) return -1;
    if (pfaction_save(writer) < 0) return -1;
    if (hook_save(writer) < 0) return -1;
@@ -91,8 +96,8 @@ int save_all (void)
    xmlDocPtr doc;
    xmlTextWriterPtr writer;
 
-   /* Do not save during tutorial. */
-   if (player_isTut())
+   /* Do not save during tutorial. Or if saving is off. */
+   if (player_isTut() || player_isFlag(PLAYER_NOSAVE))
       return 0;
 
    /* Create the writer. */
@@ -126,11 +131,12 @@ int save_all (void)
    xmlw_done(writer);
 
    /* Write to file. */
-   if (nfile_dirMakeExist("%ssaves", nfile_basePath()) < 0) {
-      WARN("Failed to create save directory '%ssaves'.", nfile_basePath());
+   if ((nfile_dirMakeExist("%s", nfile_dataPath()) < 0) ||
+         (nfile_dirMakeExist("%ssaves", nfile_dataPath()) < 0)) {
+      WARN("Failed to create save directory '%ssaves'.", nfile_dataPath());
       goto err_writer;
    }
-   snprintf(file, PATH_MAX, "%ssaves/%s.ns", nfile_basePath(), player.name);
+   nsnprintf(file, PATH_MAX, "%ssaves/%s.ns", nfile_dataPath(), player.name);
 
    /* Back up old savegame. */
    if (!save_loaded) {
@@ -165,8 +171,8 @@ err:
 void save_reload (void)
 {
    char path[PATH_MAX];
-   snprintf(path, PATH_MAX, "%ssaves/%s.ns", nfile_basePath(), player.name);
-   load_game( path );
+   nsnprintf(path, PATH_MAX, "%ssaves/%s.ns", nfile_dataPath(), player.name);
+   load_game( path, 0 );
 }
 
 
@@ -182,7 +188,7 @@ int save_hasSave (void)
    int has_save;
 
    /* Look for saved games. */
-   files = nfile_readDir( &nfiles, "%ssaves", nfile_basePath() );
+   files = nfile_readDir( &nfiles, "%ssaves", nfile_dataPath() );
    has_save = 0;
    for (i=0; i<nfiles; i++) {
       len = strlen(files[i]);

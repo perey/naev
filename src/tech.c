@@ -23,7 +23,6 @@
 #include "array.h"
 
 
-#define TECH_DATA           "dat/tech.xml"   /**< XML file containing techs. */
 #define XML_TECH_ID         "Techs"          /**< Tech xml document tag. */
 #define XML_TECH_TAG        "tech"           /**< Individual tech xml tag. */
 
@@ -105,28 +104,28 @@ int tech_load (void)
    tech_group_t *tech;
 
    /* Load the data. */
-   data = ndata_read( TECH_DATA, &bufsize );
+   data = ndata_read( TECH_DATA_PATH, &bufsize );
    if (data == NULL)
       return -1;
 
    /* Load the document. */
    doc = xmlParseMemory( data, bufsize );
    if (doc == NULL) {
-      WARN("'%s' is not a valid XML file.", TECH_DATA);
+      WARN("'%s' is not a valid XML file.", TECH_DATA_PATH);
       return -1;
    }
 
    /* Load root element. */
    parent = doc->xmlChildrenNode;
    if (!xml_isNode(parent,XML_TECH_ID)) {
-      WARN("Malformed "TECH_DATA" file: missing root element '"XML_TECH_ID"'");
+      WARN("Malformed "TECH_DATA_PATH" file: missing root element '"XML_TECH_ID"'");
       return -1;
    }
 
    /* Get first node. */
    node = parent->xmlChildrenNode;
    if (node == NULL) {
-      WARN("Malformed "TECH_DATA" file: does not contain elements");
+      WARN("Malformed "TECH_DATA_PATH" file: does not contain elements");
       return -1;
    }
 
@@ -811,6 +810,11 @@ Outfit** tech_getOutfit( tech_group_t *tech, int *n )
    int m;
    Outfit **o;
 
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
+
    /* Get the outfits. */
    *n = 0;
    m  = 0;
@@ -843,6 +847,11 @@ Outfit** tech_getOutfitArray( tech_group_t **tech, int num, int *n )
    tech_group_t grp;
    Outfit **o;
 
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
+
    tech_createMetaGroup( &grp, tech, num );
    o = tech_getOutfit( &grp, n );
    tech_freeGroup( &grp );
@@ -864,6 +873,11 @@ Ship** tech_getShip( tech_group_t *tech, int *n )
 {
    int m;
    Ship **s;
+
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
 
    /* Get the outfits. */
    *n = 0;
@@ -897,6 +911,11 @@ Ship** tech_getShipArray( tech_group_t **tech, int num, int *n )
    tech_group_t grp;
    Ship **s;
 
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
+
    tech_createMetaGroup( &grp, tech, num );
    s = tech_getShip( &grp, n );
    tech_freeGroup( &grp );
@@ -920,6 +939,11 @@ Commodity** tech_getCommodityArray( tech_group_t **tech, int num, int *n )
    tech_group_t grp;
    Commodity **c;
 
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
+
    tech_createMetaGroup( &grp, tech, num );
    c = tech_getCommodity( &grp, n );
    tech_freeGroup( &grp );
@@ -941,6 +965,11 @@ Commodity** tech_getCommodity( tech_group_t *tech, int *n )
 {
    int m;
    Commodity **c;
+
+   if (tech==NULL) {
+      *n = 0;
+      return NULL;
+   }
 
    /* Get the commodities. */
    *n = 0;

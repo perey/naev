@@ -146,8 +146,8 @@ int comm_openPilot( unsigned int pilot )
    /* Have pilot stop hailing. */
    pilot_rmFlag( comm_pilot, PILOT_HAILING );
 
-   /* Create the pilot window. */
-   wid = comm_openPilotWindow();
+   /* Don't close automatically. */
+   comm_commClose = 0;
 
    /* Run generic hail hooks. */
    hparam[0].type       = HOOK_PARAM_PILOT;
@@ -156,19 +156,17 @@ int comm_openPilot( unsigned int pilot )
    run = 0;
    run += hooks_runParam( "hail", hparam );
    run += pilot_runHook( comm_pilot, PILOT_HOOK_HAIL );
-   /* Reopen window in case something changed. */
-   if (run > 0) {
-      comm_close( wid, NULL );
-      comm_pilot = p;
-      wid = comm_openPilotWindow();
-   }
 
    /* Close window if necessary. */
-   if (comm_commClose)
-      comm_close( wid, NULL );
+   if (comm_commClose) {
+      comm_pilot  = NULL;
+      comm_planet = NULL;
+      comm_commClose = 0;
+      return 0;
+   }
 
-   /* Don't close automatically. */
-   comm_commClose = 0;
+   /* Create the pilot window. */
+   wid = comm_openPilotWindow();
 
    return 0;
 }
@@ -239,6 +237,15 @@ int comm_openPlanet( Planet *planet )
       return 0;
    }
 
+   /* Make sure planet in range. */
+   /* Function uses planet index in local system, so I moved this to player.c.
+   if ( pilot_inRangePlanet( player.p, planet->id ) <= 0 ) {
+      player_message("\erTarget is out of communications range.");
+      comm_planet = NULL;
+      return 0;
+   }
+   */
+
    comm_planet = planet;
 
    /* Create the generic comm window. */
@@ -272,7 +279,7 @@ static unsigned int comm_open( glTexture *gfx, int faction,
    glTexture *logo;
    char *stand;
    unsigned int wid;
-   glColour *c;
+   const glColour *c;
    glFont *font;
    int gw, gh;
    double aspect;
@@ -352,13 +359,13 @@ static unsigned int comm_open( glTexture *gfx, int faction,
          gh = MIN( GRAPHIC_HEIGHT, GRAPHIC_HEIGHT / aspect );
          gw = MIN( GRAPHIC_WIDTH, GRAPHIC_WIDTH * aspect );
       }
+
+      window_addImage( wid, 20 + (GRAPHIC_WIDTH-gw)/2,
+            -30 - (GRAPHIC_HEIGHT-gh)/2,
+            gw, gh, "imgGFX", comm_graphic, 0 );
    }
    else
       gh = gw = 0;
-
-   window_addImage( wid, 20 + (GRAPHIC_WIDTH-gw)/2,
-         -30 - (GRAPHIC_HEIGHT-gh)/2,
-         gw, gh, "imgGFX", comm_graphic, 0 );
 
    /* Faction logo. */
    if (logo != NULL) {
@@ -474,11 +481,13 @@ static void comm_bribePilot( unsigned int wid, char *unused )
    pilot_rmFlag( comm_pilot, PILOT_HYP_BEGIN );
 
    /* Don't allow rebribe. */
-   L = comm_pilot->ai->L;
-   lua_getglobal(L, "mem");
-   lua_pushnumber(L, 0);
-   lua_setfield(L, -2, "bribe");
-   lua_pop(L,1);
+   if (comm_pilot->ai != NULL) {
+      L = comm_pilot->ai->L;
+      lua_getglobal(L, "mem");
+      lua_pushnumber(L, 0);
+      lua_setfield(L, -2, "bribe");
+      lua_pop(L,1);
+   }
 
    /* Reopen window. */
    window_destroy( wid );
@@ -636,6 +645,9 @@ static int comm_getNumber( double *val, char* str )
    int ret;
    lua_State *L;
 
+   if (comm_pilot->ai == NULL)
+      return 1;
+
    /* Set up the state. */
    L = comm_pilot->ai->L;
    lua_getglobal( L, "mem" );
@@ -671,6 +683,9 @@ static const char* comm_getString( char *str )
 {
    lua_State *L;
    const char *ret;
+
+   if (comm_pilot->ai == NULL)
+      return NULL;
 
    /* Get memory table. */
    L = comm_pilot->ai->L;

@@ -29,6 +29,7 @@
 #include "land.h"
 #include "map.h"
 #include "nmath.h"
+#include "nstring.h"
 
 
 /* Planet metatable methods */
@@ -51,6 +52,8 @@ static int planetL_gfxExterior( lua_State *L );
 static int planetL_shipsSold( lua_State *L );
 static int planetL_outfitsSold( lua_State *L );
 static int planetL_commoditiesSold( lua_State *L );
+static int planetL_isKnown( lua_State *L );
+static int planetL_setKnown( lua_State *L );
 static const luaL_reg planet_methods[] = {
    { "cur", planetL_cur },
    { "get", planetL_get },
@@ -72,8 +75,34 @@ static const luaL_reg planet_methods[] = {
    { "shipsSold", planetL_shipsSold },
    { "outfitsSold", planetL_outfitsSold },
    { "commoditiesSold", planetL_commoditiesSold },
+   { "known", planetL_isKnown },
+   { "setKnown", planetL_setKnown },
    {0,0}
 }; /**< Planet metatable methods. */
+static const luaL_reg planet_cond_methods[] = {
+   { "cur", planetL_cur },
+   { "get", planetL_get },
+   { "getLandable", planetL_getLandable },
+   { "getAll", planetL_getAll },
+   { "system", planetL_system },
+   { "__eq", planetL_eq },
+   { "__tostring", planetL_name },
+   { "name", planetL_name },
+   { "faction", planetL_faction },
+   { "colour", planetL_colour },
+   { "class", planetL_class },
+   { "pos", planetL_position },
+   { "services", planetL_services },
+   { "canLand", planetL_canland },
+   { "landOverride", planetL_landOverride },
+   { "gfxSpace", planetL_gfxSpace },
+   { "gfxExterior", planetL_gfxExterior },
+   { "shipsSold", planetL_shipsSold },
+   { "outfitsSold", planetL_outfitsSold },
+   { "commoditiesSold", planetL_commoditiesSold },
+   { "known", planetL_isKnown },
+   {0,0}
+}; /**< Read only planet metatable methods. */
 
 
 /**
@@ -85,7 +114,6 @@ static const luaL_reg planet_methods[] = {
  */
 int nlua_loadPlanet( lua_State *L, int readonly )
 {
-   (void) readonly;
    /* Create the metatable */
    luaL_newmetatable(L, PLANET_METATABLE);
 
@@ -94,7 +122,10 @@ int nlua_loadPlanet( lua_State *L, int readonly )
    lua_setfield(L,-2,"__index");
 
    /* Register the values */
-   luaL_register(L, NULL, planet_methods);
+   if (readonly)
+      luaL_register(L, NULL, planet_cond_methods);
+   else
+      luaL_register(L, NULL, planet_methods);
 
    /* Clean up. */
    lua_setfield(L, LUA_GLOBALSINDEX, PLANET_METATABLE);
@@ -154,12 +185,21 @@ Planet* luaL_validplanet( lua_State *L, int ind )
 {
    LuaPlanet *lp;
    Planet *p;
-   lp = luaL_checkplanet( L, ind );
-   p  = planet_getIndex( lp->id );
-   if (p == NULL) {
-      NLUA_ERROR( L, "Planet is invalid" );
+
+   if (lua_isplanet(L, ind)) {
+      lp = luaL_checkplanet(L, ind);
+      p  = planet_getIndex(lp->id);
+   }
+   else if (lua_isstring(L, ind))
+      p = planet_get( lua_tostring(L, ind) );
+   else {
+      luaL_typerror(L, ind, PLANET_METATABLE);
       return NULL;
    }
+
+   if (p == NULL)
+      NLUA_ERROR(L, "Planet is invalid");
+
    return p;
 }
 /**
@@ -506,7 +546,7 @@ static int planetL_faction( lua_State *L )
 static int planetL_colour( lua_State *L )
 {
    Planet *p;
-   glColour *col;
+   const glColour *col;
    LuaColour lc;
 
    p = luaL_validplanet(L,1);
@@ -556,50 +596,32 @@ static int planetL_class(lua_State *L )
  *  - "shipyard"<br />
  *
  * @usage if p:services()["refuel"] then -- Planet has refuel service.
- * #usage if p:services()["shipyard"] then -- Planet has shipyard service.
+ * @usage if p:services()["shipyard"] then -- Planet has shipyard service.
  *    @luaparam p Planet to get the services of.
  *    @luareturn Table containing all the services.
  * @luafunc services( p )
  */
 static int planetL_services( lua_State *L )
 {
+   int i;
+   size_t len;
    Planet *p;
+   char *name, lower[256];
    p = luaL_validplanet(L,1);
 
    /* Return result in table */
    lua_newtable(L);
-      /* allows syntax foo = space.faction("foo"); if foo["bar"] then ... end */
-   if (planet_hasService(p, PLANET_SERVICE_LAND)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"land"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_INHABITED)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"inhabited"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_REFUEL)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"refuel"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_BAR)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"bar"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_MISSIONS)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"missions"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_COMMODITY)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"commodity"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_OUTFITS)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"outfits"); /* key */
-   }
-   if (planet_hasService(p, PLANET_SERVICE_SHIPYARD)) {
-      lua_pushboolean(L,1); /* value */
-      lua_setfield(L,-2,"shipyard"); /* key */
+
+   /* allows syntax like foo = planet.get("foo"); if foo["bar"] then ... end */
+   for (i=1; i<PLANET_SERVICES_MAX; i<<=1) {
+      if (planet_hasService(p, i)) {
+         name = planet_getServiceName(i);
+         len = strlen(name) + 1;
+         nsnprintf( lower, MIN(len,sizeof(lower)), "%c%s", tolower(name[0]), &name[1] );
+
+         lua_pushstring(L, name);
+         lua_setfield(L, -2, lower );
+      }
    }
    return 1;
 }
@@ -625,7 +647,7 @@ static int planetL_canland( lua_State *L )
 
 
 /**
- * @brief Lets player land on a planet no matter what.
+ * @brief Lets player land on a planet no matter what. The override lasts until the player jumps or lands.
  *
  * @usage p:landOverride( true ) -- Planet can land on p now.
  *    @luaparam p Planet to forcibly allow the player to land on.
@@ -792,5 +814,41 @@ static int planetL_commoditiesSold( lua_State *L )
    return 1;
 }
 
+/**
+ * @brief Checks to see if a planet is known by the player.
+ *
+ * @usage b = p:known()
+ *
+ *    @luaparam s Planet to check if the player knows.
+ *    @luareturn true if the player knows the planet.
+ * @luafunc known( p )
+ */
+static int planetL_isKnown( lua_State *L )
+{
+   Planet *p = luaL_validplanet(L,1);
+   lua_pushboolean(L, planet_isKnown(p));
+   return 1;
+}
 
+/**
+ * @brief Sets a planets's known state.
+ *
+ * @usage p:setKnown( false ) -- Makes planet unknown.
+ *    @luaparam p Planet to set known.
+ *    @luaparam b Whether or not to set as known (defaults to false).
+ * @luafunc setKnown( p, b )
+ */
+static int planetL_setKnown( lua_State *L )
+{
+   int b;
+   Planet *p;
 
+   p = luaL_validplanet(L,1);
+   b = lua_toboolean(L, 2);
+
+   if (b)
+      planet_setKnown( p );
+   else
+      planet_rmFlag( p, PLANET_KNOWN );
+   return 0;
+}

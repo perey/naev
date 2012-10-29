@@ -1,7 +1,7 @@
 -- This is the tutorial: disabling.
 
 include("dat/events/tutorial/tutorial-common.lua")
-include "scripts/fleethelper.lua"
+include "fleethelper.lua"
 
 -- localization stuff, translators would work here
 lang = naev.lang()
@@ -39,7 +39,12 @@ function create()
     pp:setPos(vec2.new(0, 0))
     player.swapShip("Lancelot", "Lancelot", "Paul 2", true, true)
     pp:rmOutfit("all")
+    pp:addOutfit("Milspec Orion 2301 Core System", 1, true)
+    pp:addOutfit("Tricon Naga Mk3 Engine", 1, true)
+    pp:addOutfit("Schafer & Kane Light Combat Plating", 1, true)
     pp:addOutfit("Ion Cannon", 2)
+    pp:setEnergy(100)
+    pp:setHealth(100, 100)
     pp:setDir(90)
     player.msgClear()
 
@@ -112,6 +117,7 @@ end
 
 -- Player is disabled
 function playerdisabled()
+   player.pilot():setInvincible(true)
    pirates[1]:control()
    pirates[2]:control()
    pirates[1]:hyperspace()

@@ -23,6 +23,7 @@
 #include "menu.h"
 #include "dialogue.h"
 #include "event.h"
+#include "news.h"
 #include "mission.h"
 #include "faction.h"
 #include "gui.h"
@@ -30,6 +31,8 @@
 #include "nlua_var.h"
 #include "land.h"
 #include "hook.h"
+#include "nstring.h"
+#include "outfit.h"
 
 
 #define LOAD_WIDTH      600 /**< Load window width. */
@@ -55,6 +58,8 @@ extern Planet* player_load( xmlNodePtr parent ); /**< Loads player related stuff
 extern int missions_loadActive( xmlNodePtr parent ); /**< Loads active missions. */
 /* event.c */
 extern int events_loadActive( xmlNodePtr parent );
+/* news.c */
+extern int news_loadArticles( xmlNodePtr parent );
 /* nlua_var.c */
 extern int var_load( xmlNodePtr parent ); /**< Loads mission variables. */
 /* faction.c */
@@ -163,7 +168,7 @@ static int load_load( nsave_t *save, const char *path )
  */
 int load_refresh (void)
 {
-   char **files, buf[PATH_MAX];
+   char **files, buf[PATH_MAX], *tmp;
    int nfiles, i, len;
    int ok;
    nsave_t *ns;
@@ -173,12 +178,13 @@ int load_refresh (void)
    load_saves = array_create( nsave_t );
 
    /* load the saves */
-   files = nfile_readDir( &nfiles, "%ssaves", nfile_basePath() );
+   files = nfile_readDir( &nfiles, "%ssaves", nfile_dataPath() );
    for (i=0; i<nfiles; i++) {
       len = strlen(files[i]);
 
-      /* no save extension */
-      if ((len < 5) || strcmp(&files[i][len-3],".ns")) {
+      /* no save or backup save extension */
+      if (((len < 5) || strcmp(&files[i][len-3],".ns")) &&
+            ((len < 12) || strcmp(&files[i][len-10],".ns.backup"))) {
          free(files[i]);
          memmove( &files[i], &files[i+1], sizeof(char*) * (nfiles-i-1) );
          nfiles--;
@@ -190,13 +196,31 @@ int load_refresh (void)
    if (files == NULL)
       return 0;
 
+   /* Make sure backups are after saves. */
+   for (i=0; i<nfiles-1; i++) {
+      len = strlen( files[i] );
+
+      /* Only interested in swapping backup with file after it if it's not backup. */
+      if ((len < 12) || strcmp( &files[i][len-10],".ns.backup" ))
+         continue;
+
+      /* Don't match. */
+      if (strncmp( files[i], files[i+1], (len-10) ))
+         continue;
+  
+      /* Swap around. */
+      tmp         = files[i];
+      files[i]    = files[i+1];
+      files[i+1]  = tmp;
+   }
+
    /* Allocate and parse. */
    ok = 0;
    ns = NULL;
    for (i=0; i<nfiles; i++) {
       if (!ok)
          ns = &array_grow( &load_saves );
-      snprintf( buf, sizeof(buf), "%ssaves/%s", nfile_basePath(), files[i] );
+      nsnprintf( buf, sizeof(buf), "%ssaves/%s", nfile_dataPath(), files[i] );
       ok = load_load( ns, buf );
    }
 
@@ -263,9 +287,9 @@ nsave_t *load_getList( int *n )
 void load_loadGameMenu (void)
 {
    unsigned int wid;
-   char **names;
+   char **names, buf[PATH_MAX];
    nsave_t *nslist, *ns;
-   int i, n;
+   int i, n, len;
 
    /* window */
    wid = window_create( "Load Game", -1, -1, LOAD_WIDTH, LOAD_HEIGHT );
@@ -281,7 +305,13 @@ void load_loadGameMenu (void)
       names = malloc( sizeof(char*)*n );
       for (i=0; i<n; i++) {
          ns       = &nslist[i];
-         names[i] = strdup( ns->name );
+         len      = strlen(ns->path);
+         if (strcmp(&ns->path[len-10],".ns.backup")==0) {
+            nsnprintf( buf, sizeof(buf), "%s \er(Backup)\e0", ns->name );
+            names[i] = strdup(buf);
+         }
+         else
+            names[i] = strdup( ns->name );
       }
    }
    /* case there are no files */
@@ -344,7 +374,7 @@ static void load_menu_update( unsigned int wid, char *str )
    /* Display text. */
    credits2str( credits, ns->credits, 2 );
    ntime_prettyBuf( date, sizeof(date), ns->date, 2 );
-   snprintf( buf, sizeof(buf),
+   nsnprintf( buf, sizeof(buf),
          "\eDName:\n"
          "\e0   %s\n"
          "\eDVersion:\n"
@@ -396,7 +426,7 @@ static void load_menu_load( unsigned int wdw, char *str )
                   "Save game '%s' version does not match Naev version:\n"
                   "   Save version: \er%s\e0\n"
                   "   Naev version: \eD%s\e0\n"
-                  "Are you sure you want to load the game? It may have loss of data.",
+                  "Are you sure you want to load this game? It may lose data.",
                   save, ns[pos].version, naev_version(0) ))
             return;
       }
@@ -409,7 +439,7 @@ static void load_menu_load( unsigned int wdw, char *str )
    menu_main_close();
 
    /* Try to load the game. */
-   if (load_game( ns[pos].path )) {
+   if (load_game( ns[pos].path, diff )) {
       /* Failed so reopen both. */
       menu_main();
       load_loadGameMenu();
@@ -449,13 +479,55 @@ static void load_menu_delete( unsigned int wdw, char *str )
 }
 
 
+static void load_compatSlots (void)
+{
+   /* Vars for loading old saves. */
+   int i,j;
+   char **sships;
+   glTexture **tships;
+   int nships;
+   Pilot *ship;
+   ShipOutfitSlot *sslot;
+
+   nships = player_nships();
+   sships = malloc(nships * sizeof(char*));
+   tships = malloc(nships * sizeof(glTexture*));
+   nships = player_ships( sships, tships );
+   ship   = player.p;
+   for (i=-1; i<nships; i++) {
+      if (i >= 0)
+         ship = player_getShip( sships[i] );
+      /* Remove all outfits. */
+      for (j=0; j<ship->noutfits; j++) {
+         if (ship->outfits[j]->outfit != NULL) {
+            player_addOutfit( ship->outfits[j]->outfit, 1 );
+            pilot_rmOutfitRaw( ship, ship->outfits[j] );
+         }
+
+         /* Add default outfit. */
+         sslot = ship->outfits[j]->sslot;
+         if (sslot->data != NULL)
+            pilot_addOutfitRaw( ship, sslot->data, ship->outfits[j] );
+      }
+
+      pilot_calcStats( ship );
+   }
+
+   /* Clean up. */
+   for (i=0; i<nships; i++)
+      free(sships[i]);
+   free(sships);
+   free(tships);
+}
+
+
 /**
  * @brief Actually loads a new game based on file.
  *
  *    @param file File that contains the new game.
  *    @return 0 on success.
  */
-int load_game( const char* file )
+int load_game( const char* file, int version_diff )
 {
    xmlNodePtr node;
    xmlDocPtr doc;
@@ -486,9 +558,18 @@ int load_game( const char* file )
    diff_load(node); /* Must load first to work properly. */
    pfaction_load(node); /* Must be loaded before player so the messages show up properly. */
    pnt = player_load(node);
+
+   /* Sanitize for new version. */
+   if (version_diff < 0) {
+      WARN("Old version detected. Sanitizing ships for slots");
+      load_compatSlots();
+   }
+
+   /* Load more stuff. */
    var_load(node);
    missions_loadActive(node);
    events_loadActive(node);
+   news_loadArticles( node );
    hook_load(node);
    space_sysLoad(node);
 
@@ -512,6 +593,7 @@ int load_game( const char* file )
 
    /* Sanitize the GUI. */
    gui_setCargo();
+   gui_setShip();
 
    xmlFreeDoc(doc);
 

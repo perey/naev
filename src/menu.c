@@ -13,7 +13,7 @@
 
 #include "naev.h"
 
-#include <string.h>
+#include "nstring.h"
 
 #include "SDL.h"
 
@@ -44,6 +44,7 @@
 #include "start.h"
 #include "camera.h"
 #include "board.h"
+#include "ndata.h"
 
 
 #define MAIN_WIDTH      130 /**< Main menu width. */
@@ -164,7 +165,7 @@ void menu_main (void)
    music_choose("load");
 
    /* Load background and friends. */
-   tex = gl_newImage( "gfx/Naev.png", 0 );
+   tex = gl_newImage( GFX_PATH"Naev.png", 0 );
    main_naevLogo = tex;
    menu_main_bkg_system();
 
@@ -184,7 +185,7 @@ void menu_main (void)
    }
    else if (freespace > 200.) {
       /* We'll want a maximum separation of 30 between logo and text. */
-      freespace  -=  25;
+      /*freespace  -=  25;*/
       offset_logo = -25;
       offset_wdw  = -1.;
    }
@@ -495,7 +496,7 @@ void menu_death (void)
    window_onClose( wid, menu_death_close );
 
    /* Allow the player to continue if the savegame exists, if not, propose to restart */
-   snprintf(path, PATH_MAX, "%ssaves/%s.ns", nfile_basePath(), player.name);
+   nsnprintf(path, PATH_MAX, "%ssaves/%s.ns", nfile_dataPath(), player.name);
    if (!player_isTut() && nfile_fileExists(path))
       window_addButton( wid, 20, 20 + BUTTON_HEIGHT*2 + 20*2, BUTTON_WIDTH, BUTTON_HEIGHT,
          "btnContinue", "Continue", menu_death_continue );

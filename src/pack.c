@@ -43,7 +43,7 @@
 #endif /* HAS_FD */
 #include <unistd.h> /* WRITE() */
 #include <errno.h> /* error numbers */
-#include <string.h> /* strlen() and friends */
+#include "nstring.h" /* strlen() and friends */
 #include <stdlib.h> /* malloc */
 #if HAS_POSIX
 #include <arpa/inet.h> /* ntohl */
@@ -569,8 +569,7 @@ Packfile_t* pack_open( const char* packfile, const char* filename )
    uint64_t end64;
 
    /* Allocate memory. */
-   file = malloc(sizeof(Packfile_t));
-   memset( file, 0, sizeof(Packfile_t) );
+   file = calloc( 1, sizeof(Packfile_t) );
 
 #if HAS_FD
    file->fd = open( packfile, O_RDONLY );
@@ -882,7 +881,7 @@ char** pack_listfiles( const char* packfile, uint32_t* nfiles )
    filenames = malloc(((*nfiles)+1)*sizeof(char*));
    for (i=0; i<*nfiles; i++) { /* start to search files */
       j = 0;
-      filenames[i] = malloc(PATH_MAX*sizeof(char));
+      filenames[i] = malloc(PATH_MAX);
       READ( &file, &filenames[i][j], 1 ); /* get the name */
       while ( filenames[i][j++] != '\0' )
          READ( &file, &filenames[i][j], 1 );

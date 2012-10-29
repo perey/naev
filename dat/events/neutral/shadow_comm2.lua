@@ -2,7 +2,7 @@
 -- Comm Event for the Shadow missions
 --]]
 
-include ("scripts/proximity.lua") 
+include ("proximity.lua") 
 
 -- localization stuff, translators would work here
 lang = naev.lang()
@@ -20,6 +20,7 @@ end
 -- Make the ship hail the player
 function hailme()
     naev.missionStart("Dark Shadow")
+    player.commClose()
     evt.finish()
 end
 

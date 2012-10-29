@@ -35,6 +35,7 @@
 #include "ntime.h"
 #include "hook.h"
 #include "map.h"
+#include "map_overlay.h"
 #include "nfile.h"
 #include "spfx.h"
 #include "unidiff.h"
@@ -57,6 +58,8 @@
 #include "player_gui.h"
 #include "start.h"
 #include "input.h"
+#include "news.h"
+#include "nstring.h"
 
 
 /*
@@ -193,6 +196,7 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet );
 static int player_parseEscorts( xmlNodePtr parent );
 static void player_addOutfitToPilot( Pilot* pilot, Outfit* outfit, PilotOutfitSlot *s );
 /* Misc. */
+static void player_planetOutOfRangeMsg (void);
 static int player_outfitCompare( const void *arg1, const void *arg2 );
 static int player_thinkMouseFly(void);
 static int preemption = 0; /* Hyperspace target/untarget preemption. */
@@ -293,6 +297,9 @@ void player_newTutorial (void)
    /* Start the economy. */
    economy_init();
 
+   /* Start the news */
+   news_init();
+
    /* Play music. */
    music_choose( "ambient" );
 
@@ -342,7 +349,7 @@ void player_new (void)
       return;
    }
 
-   if (nfile_fileExists("%ssaves/%s.ns", nfile_basePath(), player.name)) {
+   if (nfile_fileExists("%ssaves/%s.ns", nfile_dataPath(), player.name)) {
       r = dialogue_YesNo("Overwrite",
             "You already have a pilot named %s. Overwrite?",player.name);
       if (r==0) { /* no */
@@ -388,6 +395,7 @@ void player_new (void)
 static int player_newMake (void)
 {
    Ship *ship;
+   const char *shipname;
    double x,y;
 
    /* Time. */
@@ -399,11 +407,13 @@ static int player_newMake (void)
 
    /* Try to create the pilot, if fails reask for player name. */
    ship = ship_get( start_ship() );
+   shipname = start_shipname();
    if (ship==NULL) {
       WARN("Ship not properly set by module.");
       return -1;
    }
-   if (player_newShip( ship, NULL, 0, 0 ) == NULL) {
+   /* Setting a default name in the XML prevents naming prompt. */
+   if (player_newShip( ship, shipname, 0, (shipname==NULL) ? 0 : 1 ) == NULL) {
       player_new();
       return -1;
    }
@@ -421,6 +431,9 @@ static int player_newMake (void)
 
    /* Start the economy. */
    economy_init();
+
+   /* Start the news */
+   news_init();
 
    return 0;
 }
@@ -465,7 +478,7 @@ Pilot* player_newShip( Ship* ship, const char *def_name,
       ship_name = malloc( len );
       strncpy( ship_name, def_name, len );
       while (player_hasShip(ship_name)) {
-         snprintf( ship_name, len, "%s %d", def_name, i );
+         nsnprintf( ship_name, len, "%s %d", def_name, i );
          i++;
       }
    }
@@ -575,6 +588,7 @@ void player_swapShip( char* shipname )
    int i, j;
    Pilot* ship;
    Vector2d v;
+   double dir;
 
    for (i=0; i<player_nstack; i++) {
       if (strcmp(shipname,player_stack[i].p->name)!=0)
@@ -591,6 +605,7 @@ void player_swapShip( char* shipname )
 
       /* Store position. */
       vectcpy( &v, &player.p->solid->pos );
+      dir = player.p->solid->dir;
 
       /* extra pass to calculate stats */
       pilot_calcStats( ship );
@@ -607,6 +622,7 @@ void player_swapShip( char* shipname )
 
       /* Copy position back. */
       vectcpy( &player.p->solid->pos, &v );
+      player.p->solid->dir = dir;
 
       /* Fill the tank. */
       if (landed)
@@ -731,6 +747,7 @@ void player_cleanup (void)
    /* Clean up gui. */
    gui_cleanup();
    player_guiCleanup();
+   ovr_setOpen(0);
 
    /* clean up the stack */
    for (i=0; i<player_nstack; i++) {
@@ -791,6 +808,9 @@ void player_cleanup (void)
 
    /* Stop the sounds. */
    sound_stopAll();
+
+   /* Reset time compression. */
+   pause_setSpeed( 1.0 );
 
    /* Clean up. */
    memset( &player, 0, sizeof(Player_t) );
@@ -1012,7 +1032,6 @@ void player_think( Pilot* pplayer, const double dt )
    Pilot *target;
    double turn;
    int facing;
-   Outfit *afb;
    int ret;
 
    /* last i heard, the dead don't think */
@@ -1079,7 +1098,7 @@ void player_think( Pilot* pplayer, const double dt )
    }
 
    /* turning taken over by PLAYER_REVERSE */
-   if (!facing && player_isFlag(PLAYER_REVERSE)) {
+   if (player_isFlag(PLAYER_REVERSE)) {
 
       /* Check to see if already stopped. */
       /*
@@ -1094,13 +1113,18 @@ void player_think( Pilot* pplayer, const double dt )
       */
 
       /*
-       * I don't think automatic braking is good.
+       * If the player has reverse thrusters, fire those.
        */
-      pilot_face( pplayer, VANGLE(player.p->solid->vel) + M_PI );
-
-      /* Disable turning. */
-      facing = 1;
+      if (player.p->stats.misc_reverse_thrust)
+         player_accel( -0.4 );
+      else if (!facing){
+         pilot_face( pplayer, VANGLE(player.p->solid->vel) + M_PI );
+         /* Disable turning. */
+         facing = 1;
+      }
    }
+   else if(player.p->stats.misc_reverse_thrust && !player_isFlag(PLAYER_REVERSE) && !player_isFlag(PLAYER_ACCEL) && !player_isFlag(PLAYER_AUTONAV))
+      player_accelOver();
 
    /* normal turning scheme */
    if (!facing) {
@@ -1146,19 +1170,7 @@ void player_think( Pilot* pplayer, const double dt )
    }
 
 
-   /*
-    * Afterburn!
-    */
-   if (player_isFlag(PLAYER_AFTERBURNER)) {
-      if (pilot_isFlag(player.p,PILOT_AFTERBURNER)) {
-         afb = pplayer->afterburner->outfit;
-         pilot_setThrust( pplayer, 1. + afb->u.afb.thrust * MIN( 1., afb->u.afb.mass_limit/player.p->solid->mass ) );
-      }
-      else /* Ran out of energy */
-         player_afterburnOver(1);
-   }
-   else
-      pilot_setThrust( pplayer, player_acc );
+   pilot_setThrust( pplayer, player_acc );
 }
 
 
@@ -1190,9 +1202,9 @@ void player_updateSpecific( Pilot *pplayer, const double dt )
    int engsound;
 
    /* Calculate engine sound to use. */
-   if (player_isFlag(PLAYER_AFTERBURNER))
+   if (pilot_isFlag(pplayer, PILOT_AFTERBURNER))
       engsound = pplayer->afterburner->outfit->u.afb.sound;
-   else if (pplayer->solid->thrust > 0.) {
+   else if ((pplayer->solid->thrust > 1e-3) || (pplayer->solid->thrust < -1e-3)) {
       /* See if is in hyperspace. */
       if (pilot_isFlag(pplayer, PILOT_HYPERSPACE))
          engsound = snd_hypEng;
@@ -1235,13 +1247,24 @@ void player_updateSpecific( Pilot *pplayer, const double dt )
 /**
  * @brief Activates a player's weapon set.
  */
-void player_weapSetPress( int id, int type )
+void player_weapSetPress( int id, int type, int repeat )
 {
+   if (repeat)
+      return;
+
    if ((type > 0) && ((player.p == NULL) || toolkit_isOpen()))
       return;
 
-   if (player.p != NULL)
-      pilot_weapSetPress( player.p, id, type );
+   if (player.p == NULL)
+      return;
+
+   if (pilot_isFlag(player.p, PILOT_HYP_PREP) ||
+         pilot_isFlag(player.p, PILOT_HYPERSPACE) ||
+         pilot_isFlag(player.p, PILOT_LANDING) ||
+         pilot_isFlag(player.p, PILOT_TAKEOFF))
+      return;
+
+   pilot_weapSetPress( player.p, id, type );
 }
 
 
@@ -1264,6 +1287,7 @@ void player_targetPlanetSet( int id )
 
    old = player.p->nav_planet;
    player.p->nav_planet = id;
+   player_hyperspacePreempt((id < 0) ? 1 : 0);
    if (old != id) {
       player_rmFlag(PLAYER_LANDACK);
       if (id >= 0)
@@ -1279,29 +1303,29 @@ void player_targetPlanetSet( int id )
  */
 void player_targetPlanet (void)
 {
-   int id;
+   int id, i;
 
    /* Not under manual control. */
    if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
       return;
 
    /* Find next planet target. */
-   id = player.p->nav_planet+1;
-   player_hyperspacePreempt(0);
-   while (id < cur_system->nplanets) {
+   for (id=player.p->nav_planet+1; id<cur_system->nplanets; id++)
+      if (planet_isKnown( cur_system->planets[id] ))
+         break;
 
-      /* In range, target planet. */
-      if ((cur_system->planets[ id ]->real == ASSET_REAL)
-            && pilot_inRangePlanet( player.p, id )) {
-         player_targetPlanetSet( id );
-         return;
-      }
-
-      id++;
+   /* Try to select the lowest-indexed valid planet. */
+   if (id >= cur_system->nplanets ) {
+      id = -1;
+      for (i=0; i<cur_system->nplanets; i++)
+         if (planet_isKnown( cur_system->planets[i] )) {
+            id = i;
+            break;
+         }
    }
 
    /* Untarget if out of range. */
-   player_targetPlanetSet( -1 );
+   player_targetPlanetSet( id );
 }
 
 
@@ -1364,6 +1388,11 @@ void player_land (void)
 
       player_land(); /* rerun land protocol */
    }
+   /*check if planet is in range*/
+   else if (!pilot_inRangePlanet( player.p, player.p->nav_planet)) {
+      player_planetOutOfRangeMsg();
+      return;
+   }
    else if (player_isFlag(PLAYER_NOLAND)) {
       player_message( "\er%s", player_message_noland );
       return;
@@ -1413,9 +1442,12 @@ void player_land (void)
       }
 
       /* Stop afterburning. */
-      player_afterburnOver(1);
+      pilot_afterburnOver( player.p );
       /* Stop accelerating. */
       player_accelOver();
+
+      /* Stop all on outfits. */
+      pilot_outfitOffAll( player.p );
 
       /* Start landing. */
       if (runcount == 0)
@@ -1427,6 +1459,29 @@ void player_land (void)
       pilot_setTurn( player.p, 0. );
       runcount++;
    }
+}
+
+
+/**
+ * @brief Checks whether the player's ship is able to takeoff.
+ */
+int player_canTakeoff(void)
+{
+   int i;
+
+   for (i=0; i<player.p->outfit_nstructure; i++)
+      if (player.p->outfit_structure[i].sslot->required && player.p->outfit_structure[i].outfit == NULL)
+         return 0;
+
+   for (i=0; i<player.p->outfit_nutility; i++)
+      if (player.p->outfit_utility[i].sslot->required && player.p->outfit_utility[i].outfit == NULL)
+         return 0;
+
+   for (i=0; i<player.p->outfit_nweapon; i++)
+      if (player.p->outfit_weapon[i].sslot->required && player.p->outfit_weapon[i].outfit == NULL)
+         return 0;
+
+   return 1;
 }
 
 
@@ -1460,6 +1515,7 @@ void player_targetHyperspaceSet( int id )
 
    old = player.p->nav_hyperspace;
    player.p->nav_hyperspace = id;
+   player_hyperspacePreempt((id < 0) ? 0 : 1);
    if ((old != id) && (id >= 0))
       player_soundPlayGUI(snd_nav,1);
    gui_setNav();
@@ -1471,21 +1527,27 @@ void player_targetHyperspaceSet( int id )
  */
 void player_targetHyperspace (void)
 {
-   int id;
+   int id, i;
 
    /* Not under manual control. */
    if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
       return;
 
-   id = player.p->nav_hyperspace+1;
    map_clear(); /* clear the current map path */
 
+   for (id=player.p->nav_hyperspace+1; id<cur_system->njumps; id++)
+      if (jp_isKnown( &cur_system->jumps[id]))
+         break;
+
+   /* Try to find the lowest-indexed valid jump. */
    if (id >= cur_system->njumps) {
       id = -1;
-      player_hyperspacePreempt(0);
+      for (i=0; i<cur_system->njumps; i++)
+         if (jp_isKnown( &cur_system->jumps[i])) {
+            id = i;
+            break;
+         }
    }
-   else
-      player_hyperspacePreempt(1);
 
    player_targetHyperspaceSet( id );
 
@@ -1496,6 +1558,7 @@ void player_targetHyperspace (void)
       map_select( cur_system->jumps[ id ].target, 0 );
 }
 
+
 /**
  * @brief Enables or disables jump points preempting planets in autoface and target clearing.
  *
@@ -1505,6 +1568,18 @@ void player_hyperspacePreempt( int preempt )
 {
    preemption = preempt;
 }
+
+
+/**
+ * @brief Returns whether the jump point target should preempt the planet target.
+ *
+ *    @return Boolean; 1 preempts planet target.
+ */
+int player_getHypPreempt(void)
+{
+   return preemption;
+}
+
 
 /**
  * @brief Starts the hail sounds and aborts autoNav
@@ -1623,7 +1698,7 @@ void player_brokeHyperspace (void)
    cam_setTargetPilot( player.p->id, 0 );
 
    /* reduce fuel */
-   player.p->fuel -= HYPERSPACE_FUEL;
+   player.p->fuel -= player.p->fuel_consumption;
 
    /* stop hyperspace */
    pilot_rmFlag( player.p, PILOT_HYPERSPACE );
@@ -1640,7 +1715,7 @@ void player_brokeHyperspace (void)
    /* Disable autonavigation if arrived. */
    if (player_isFlag(PLAYER_AUTONAV)) {
       if (player.p->nav_hyperspace == -1) {
-         player_message( "\epAutonav arrived at destination.");
+         player_message( "\epAutonav arrived at the %s system.", cur_system->name);
          player_autonavEnd();
       }
       else {
@@ -1653,52 +1728,10 @@ void player_brokeHyperspace (void)
    hooks_run( "jumpin" );
    hooks_run( "enter" );
    events_trigger( EVENT_TRIGGER_ENTER );
+   missions_run( MIS_AVAIL_SPACE, -1, NULL, NULL );
 
    /* Player sound. */
    player_soundPlay( snd_hypJump, 1 );
-}
-
-
-/**
- * @brief Activate the afterburner.
- */
-void player_afterburn (void)
-{
-   double afb_mod;
-
-   if (pilot_isFlag(player.p, PILOT_HYP_PREP) || pilot_isFlag(player.p, PILOT_HYPERSPACE) ||
-         pilot_isFlag(player.p, PILOT_LANDING) || pilot_isFlag(player.p, PILOT_TAKEOFF))
-      return;
-
-   /* Not under manual control. */
-   if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
-      return;
-
-   /** @todo fancy effect? */
-   if ((player.p != NULL) && (player.p->afterburner!=NULL)) {
-      afb_mod = MIN( 1., player.p->afterburner->outfit->u.afb.mass_limit / player.p->solid->mass );
-
-      player_setFlag(PLAYER_AFTERBURNER);
-      pilot_setFlag(player.p,PILOT_AFTERBURNER);
-      spfx_shake( afb_mod * player.p->afterburner->outfit->u.afb.rumble * SHAKE_MAX );
-      if (toolkit_isOpen() || paused)
-         player_soundPause();
-   }
-}
-
-
-/**
- * @brief Deactivates the afterburner.
- */
-void player_afterburnOver (int type)
-{
-   if ((player.p != NULL) && (player.p->afterburner!=NULL)) {
-      player_rmFlag(PLAYER_AFTERBURNER);
-      pilot_rmFlag(player.p,PILOT_AFTERBURNER);
-   }
-
-   if (type)
-      player_accel(1.);
 }
 
 
@@ -1879,12 +1912,25 @@ void player_targetEscort( int prev )
  */
 void player_targetNearest (void)
 {
-   unsigned int t;
+   unsigned int t, dt, old;
+   double d;
 
-   t = player.p->target;
-   pilot_setTarget( player.p, pilot_getNearestPilot(player.p) );
+   d = pilot_getNearestPos( player.p, &dt, player.p->solid->pos.x,
+         player.p->solid->pos.y, 1 );
+   t = dt;
 
-   if ((player.p->target != PLAYER_ID) && (t != player.p->target)) {
+   /* Disabled ships are typically only valid if within 500 px of the player. */
+   if ((d > 250000) && (pilot_isDisabled( pilot_get(dt) ))) {
+      t = pilot_getNearestPilot(player.p);
+      /* Try to target a disabled ship if there are no active ships in range. */
+      if (t == PLAYER_ID)
+         t = dt;
+   }
+
+   old = player.p->target;
+   pilot_setTarget( player.p, t );
+
+   if ((player.p->target != PLAYER_ID) && (old != player.p->target)) {
       gui_forceBlink();
       player_soundPlayGUI( snd_target, 1 );
    }
@@ -1900,15 +1946,15 @@ void player_screenshot (void)
 {
    char filename[PATH_MAX];
 
-   if (nfile_dirMakeExist("%sscreenshots", nfile_basePath())) {
+   if (nfile_dirMakeExist("%s", nfile_dataPath()) < 0 || nfile_dirMakeExist("%sscreenshots", nfile_dataPath()) < 0) {
       WARN("Aborting screenshot");
       return;
    }
 
    /* Try to find current screenshots. */
    for ( ; screenshot_cur < 1000; screenshot_cur++) {
-      snprintf( filename, PATH_MAX, "%sscreenshots/screenshot%03d.png",
-            nfile_basePath(), screenshot_cur );
+      nsnprintf( filename, PATH_MAX, "%sscreenshots/screenshot%03d.png",
+            nfile_dataPath(), screenshot_cur );
       if (!nfile_fileExists( filename ))
          break;
    }
@@ -1949,6 +1995,16 @@ static void player_checkHail (void)
 
 
 /**
+ * @brief Displays an out of range message for the player's currently selected planet.
+ */
+static void player_planetOutOfRangeMsg (void)
+{
+   player_message( "\er%s is out of comm range, unable to contact.",
+         cur_system->planets[player.p->nav_planet]->name );
+}
+
+
+/**
  * @brief Opens communication with the player's target.
  */
 void player_hail (void)
@@ -1959,8 +2015,12 @@ void player_hail (void)
 
    if (player.p->target != player.p->id)
       comm_openPilot(player.p->target);
-   else if(player.p->nav_planet != -1)
-      comm_openPlanet( cur_system->planets[ player.p->nav_planet ] );
+   else if(player.p->nav_planet != -1) {
+      if (pilot_inRangePlanet( player.p, player.p->nav_planet ))
+         comm_openPlanet( cur_system->planets[ player.p->nav_planet ] );
+      else
+         player_planetOutOfRangeMsg();
+   }
    else
       player_message("\erNo target selected to hail.");
 
@@ -1978,8 +2038,12 @@ void player_hailPlanet (void)
    if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
       return;
 
-   if (player.p->nav_planet != -1)
-      comm_openPlanet( cur_system->planets[ player.p->nav_planet ] );
+   if (player.p->nav_planet != -1) {
+      if (pilot_inRangePlanet( player.p, player.p->nav_planet ))
+         comm_openPlanet( cur_system->planets[ player.p->nav_planet ] );
+      else
+         player_planetOutOfRangeMsg();
+   }
    else
       player_message("\erNo target selected to hail.");
 }
@@ -2042,6 +2106,26 @@ void player_toggleMouseFly(void)
 
 
 /**
+ * @brief Toggles active cooldown mode.
+ */
+void player_toggleCooldown(void)
+{
+   if (pilot_isFlag(player.p, PILOT_TAKEOFF))
+      return;
+
+   /* Not under manual control. */
+   if (pilot_isFlag( player.p, PILOT_MANUAL_CONTROL ))
+      return;
+
+   if ((!pilot_isFlag(player.p, PILOT_COOLDOWN)) &&
+            (!pilot_isFlag(player.p, PILOT_COOLDOWN_BRAKE)))
+      pilot_cooldown( player.p );
+   else
+      pilot_cooldownEnd(player.p, NULL);
+}
+
+
+/**
  * @brief Handles mouse flying based on cursor position.
  *
  *    @return 1 if cursor is outside the dead zone, 0 if it isn't.
@@ -2097,6 +2181,9 @@ void player_destroyed (void)
 
    /* Stop sounds. */
    player_soundStop();
+
+   /* Reset time compression when player dies. */
+   pause_setSpeed( 1. );
 }
 
 
@@ -2128,19 +2215,19 @@ static int player_shipsCompare( const void *arg1, const void *arg2 )
 
 
 /**
- * @brief Returns a buffer with all the player's ships names
- *        or "None" if there are no ships.
+ * @brief Returns a buffer with all the player's ships names.
  *
  *    @param sships Fills sships with player_nships ship names.
  *    @param tships Fills sships with player_nships ship target textures.
  *    @return Freshly allocated array with allocated ship names.
+ *    @return The number of ships the player has.
  */
-void player_ships( char** sships, glTexture** tships )
+int player_ships( char** sships, glTexture** tships )
 {
    int i;
 
    if (player_nstack == 0)
-      return;
+      return 0;
 
    /* Sort. */
    qsort( player_stack, player_nstack, sizeof(PlayerShip_t), player_shipsCompare );
@@ -2150,6 +2237,8 @@ void player_ships( char** sships, glTexture** tships )
       sships[i] = strdup(player_stack[i].p->name);
       tships[i] = player_stack[i].p->ship->gfx_store;
    }
+
+   return player_nstack;
 }
 
 
@@ -2263,8 +2352,8 @@ int player_outfitOwned( const Outfit* o )
    int i;
 
    /* Special case map. */
-   if ((outfit_isMap(o)) &&
-         map_isMapped( NULL, o->u.map.radius ))
+   if ((outfit_isMap(o) && map_isMapped(o)) ||
+         (outfit_isLocalMap(o) && localmap_isMapped(o)))
       return 1;
 
    /* Special case license. */
@@ -2305,17 +2394,32 @@ static int player_outfitCompare( const void *arg1, const void *arg2 )
 /**
  * @brief Prepares two arrays for displaying in an image array.
  *
- *    @param[out] soutfits Names of outfits to .
+ *    @param[out] soutfits Names of outfits the player owns.
  *    @param[out] toutfits Textures of outfits for image array.
  */
-void player_getOutfits( char** soutfits, glTexture** toutfits )
+int player_getOutfits( char** soutfits, glTexture** toutfits )
 {
-   int i;
+   return player_getOutfitsFiltered( soutfits, toutfits, NULL );
+}
+
+
+/**
+ * @brief Prepares two arrays for displaying in an image array.
+ *
+ *    @param[out] soutfits Names of outfits to .
+ *    @param[out] toutfits Textures of outfits for image array.
+ *    @param[in] filter Function to filter which outfits to get.
+ */
+int player_getOutfitsFiltered( char** soutfits, glTexture** toutfits,
+      int(*filter)( const Outfit *o ) )
+{
+   int i, j;
 
    if (player_noutfits == 0) {
       soutfits[0] = strdup( "None" );
-      toutfits[0] = NULL;
-      return;
+      if (toutfits != NULL)
+         toutfits[0] = NULL;
+      return 1;
    }
 
    /* We'll sort. */
@@ -2323,10 +2427,25 @@ void player_getOutfits( char** soutfits, glTexture** toutfits )
          sizeof(PlayerOutfit_t), player_outfitCompare );
 
    /* Now built name and texture structure. */
+   j = 0;
    for (i=0; i<player_noutfits; i++) {
-      soutfits[i] = strdup( player_outfits[i].o->name );
-      toutfits[i] = player_outfits[i].o->gfx_store;
+      if ((filter == NULL) || filter(player_outfits[i].o)) {
+         soutfits[j] = strdup( player_outfits[i].o->name );
+         if (toutfits != NULL)
+            toutfits[j] = player_outfits[i].o->gfx_store;
+         j++;
+      }
    }
+
+   /* None found. */
+   if (j == 0) {
+      soutfits[0] = strdup( "None" );
+      if (toutfits != NULL)
+         toutfits[0] = NULL;
+      return 1;
+   }
+
+   return j;
 }
 
 
@@ -2358,8 +2477,12 @@ int player_addOutfit( const Outfit *o, int quantity )
 
    /* special case if it's a map */
    if (outfit_isMap(o)) {
-      map_map(NULL,o->u.map.radius);
+      map_map(o);
       return 1; /* Success. */
+   }
+   else if (outfit_isLocalMap(o)) {
+      localmap_map(o);
+      return 1;
    }
    /* special case if it's an outfit */
    else if (outfit_isGUI(o)) {
@@ -2571,6 +2694,7 @@ void player_runHooks (void)
       hooks_run( "jumpin" );
       hooks_run( "enter" );
       events_trigger( EVENT_TRIGGER_ENTER );
+      missions_run( MIS_AVAIL_SPACE, -1, NULL, NULL );
       player_rmFlag( PLAYER_HOOK_JUMPIN );
    }
    if (player_isFlag( PLAYER_HOOK_LAND )) {
@@ -2701,6 +2825,7 @@ int player_save( xmlTextWriterPtr writer )
    if (player.gui != NULL)
       xmlw_elem(writer,"gui","%s",player.gui);
    xmlw_elem(writer,"guiOverride","%d",player.guiOverride);
+   xmlw_elem(writer,"mapOverlay","%d",ovr_isOpen());
 
    /* Time. */
    xmlw_startElem(writer,"time");
@@ -2771,7 +2896,6 @@ int player_save( xmlTextWriterPtr writer )
 
    return 0;
 }
-
 
 /**
  * @brief Saves an outfit slot.
@@ -2885,6 +3009,7 @@ static int player_saveShip( xmlTextWriterPtr writer,
 
    xmlw_startElem(writer,"weaponsets");
    xmlw_attr(writer,"autoweap","%d",ship->autoweap);
+   xmlw_attr(writer,"active_set","%d",ship->active_set);
    for (i=0; i<PILOT_WEAPON_SETS; i++) {
       weaps = pilot_weapSetList( ship, i, &n );
       xmlw_startElem(writer,"weaponset");
@@ -2911,7 +3036,6 @@ static int player_saveShip( xmlTextWriterPtr writer,
 
    return 0;
 }
-
 
 /**
  * @brief Loads the player stuff.
@@ -2958,7 +3082,7 @@ static Planet* player_parse( xmlNodePtr parent )
    xmlNodePtr node, cur;
    int q;
    Outfit *o;
-   int i, hunting;
+   int i, hunting, map_overlay;
    StarSystem *sys;
    double a, r;
    Pilot *old_ship;
@@ -2973,8 +3097,9 @@ static Planet* player_parse( xmlNodePtr parent )
    pnt = NULL;
 
    /* Sane defaults. */
-   planet = NULL;
-   time_set = 0;
+   planet      = NULL;
+   time_set    = 0;
+   map_overlay = 0;
 
    /* Must get planet first. */
    node = parent->xmlChildrenNode;
@@ -2991,6 +3116,8 @@ static Planet* player_parse( xmlNodePtr parent )
       xmlr_ulong(node,"credits",player_creds);
       xmlr_strd(node,"gui",player.gui);
       xmlr_int(node,"guiOverride",player.guiOverride);
+      xmlr_int(node,"mapOverlay",map_overlay);
+      ovr_setOpen(map_overlay);
 
       /* Time. */
       if (xml_isNode(node,"time")) {
@@ -3119,7 +3246,7 @@ static Planet* player_parse( xmlNodePtr parent )
                !planet_hasService(pnt, PLANET_SERVICE_REFUEL) ||
                areEnemies(pnt->faction, FACTION_PLAYER)) {
             WARN("Planet '%s' found, but is not suitable. Trying again.", planet);
-            pnt = planet_get( space_getRndPlanet( (i>100) ? 1 : 0  ) ); /* We try landable only for the first 100 tries. */
+            pnt = planet_get( space_getRndPlanet( (i>100) ? 1 : 0 ) ); /* We try landable only for the first 100 tries. */
          }
          else
             hunting = 0;
@@ -3267,7 +3394,7 @@ static void player_addOutfitToPilot( Pilot* pilot, Outfit* outfit, PilotOutfitSl
 {
    int ret;
 
-   if (!outfit_fitsSlot( outfit, &s->slot )) {
+   if (!outfit_fitsSlot( outfit, &s->sslot->slot )) {
       DEBUG( "Outfit '%s' does not fit designated slot on player's pilot '%s', adding to stock.",
             outfit->name, pilot->name );
       player_addOutfit( outfit, 1 );
@@ -3354,7 +3481,7 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
    Commodity *com;
    PilotFlags flags;
    unsigned int pid;
-   int autoweap, level, weapid;
+   int autoweap, level, weapid, active_set;
 
    xmlr_attr(parent,"name",name);
    xmlr_attr(parent,"model",model);
@@ -3383,6 +3510,11 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
    }
    else
       ship = pilot_createEmpty( ship_parsed, name, faction_get("Player"), "player", flags );
+
+   /* Ship should not have default outfits. */
+   for (i=0; i<ship->noutfits; i++)
+      pilot_rmOutfitRaw( ship, ship->outfits[i] );
+
    /* Clean up. */
    free(name);
    free(model);
@@ -3531,6 +3663,17 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
          free(id);
       }
 
+      /* Load the last weaponset the player used on this ship. */
+      xmlr_attr(node,"active_set",id);
+      if (id != NULL) {
+         active_set = atoi(id);
+         free(id);
+      }
+      else {
+         /* set active_set to invalid. will be dealt with later */
+         active_set = -1;
+      }
+
       /* Parse weapon sets. */
       cur = node->xmlChildrenNode;
       do { /* Load each weapon set. */
@@ -3616,7 +3759,10 @@ static int player_parseShip( xmlNodePtr parent, int is_player, char *planet )
    if (autoweap)
       pilot_weaponAuto( ship );
    pilot_weaponSane( ship );
-   pilot_weaponSetDefault( ship );
+   if (active_set >= 0 && active_set < PILOT_WEAPON_SETS)
+      ship->active_set = active_set;
+   else
+      pilot_weaponSetDefault( ship );
 
    return 0;
 }

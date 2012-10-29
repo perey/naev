@@ -14,7 +14,7 @@
 #include "naev.h"
 
 #include <stdlib.h>
-#include <string.h>
+#include "nstring.h"
 
 #include "nxml.h"
 
@@ -32,9 +32,6 @@
 #define XML_FACTION_ID     "Factions"   /**< XML section identifier */
 #define XML_FACTION_TAG    "faction" /**< XML tag identifier. */
 
-#define FACTION_DATA       "dat/faction.xml" /**< Faction xml file. */
-#define FACTION_LOGO_PATH  "gfx/logo/" /**< Path to logo gfx. */
-
 
 #define PLAYER_ALLY        70. /**< Above this player is considered ally. */
 #define PLAYER_ENEMY       0. /**< Below this the player is considered an enemy. */
@@ -42,13 +39,14 @@
 
 #define CHUNK_SIZE         32 /**< Size of chunk for allocation. */
 
-
 #define FACTION_STATIC        (1<<0) /**< Faction doesn't change standing with player. */
 #define FACTION_INVISIBLE     (1<<1) /**< Faction isn't exposed to the player. */
+#define FACTION_KNOWN         (1<<2) /**< Faction is known to the player. */
 
 #define faction_setFlag(fa,f) ((fa)->flags |= (f))
+#define faction_rmFlag(fa,f)  ((fa)->flags &= ~(f))
 #define faction_isFlag(fa,f)  ((fa)->flags & (f))
-
+#define faction_isKnown_(fa)   ((fa)->flags & (FACTION_KNOWN))
 
 /**
  * @struct Faction
@@ -63,7 +61,7 @@ typedef struct Faction_ {
    /* Graphics. */
    glTexture *logo_small; /**< Small logo. */
    glTexture *logo_tiny; /**< Tiny logo. */
-   glColour *colour; /**< Faction specific colour. */
+   const glColour *colour; /**< Faction specific colour. */
 
    /* Enemies */
    int *enemies; /**< Enemies by ID of the faction. */
@@ -83,10 +81,12 @@ typedef struct Faction_ {
    /* Behaviour. */
    lua_State *state; /**< Faction specific state. */
 
+   /* Equipping. */
+   lua_State *equip_state; /**< Faction equipper state. */
+
    /* Flags. */
    unsigned int flags; /**< Flags affecting the faction. */
 } Faction;
-
 
 static Faction* faction_stack = NULL; /**< Faction stack. */
 int faction_nstack = 0; /**< Number of factions in the faction stack. */
@@ -150,6 +150,60 @@ int* faction_getAll( int *n )
    return f;
 }
 
+/**
+ * @brief Gets all the known factions.
+ */
+int* faction_getKnown( int *n )
+{
+   int i;
+   int *f;
+   int m;
+
+   /* Set up. */
+   f  = malloc( sizeof(int) * faction_nstack );
+
+   /* Get IDs. */
+   m = 0;
+   for (i=0; i<faction_nstack; i++)
+      if (!faction_isFlag( &faction_stack[i], FACTION_INVISIBLE ) && faction_isKnown_( &faction_stack[i] ))
+         f[m++] = i;
+
+   *n = m;
+   return f;
+}
+
+/**
+ * @brief Clears the known factions.
+ */
+void faction_clearKnown()
+{
+   int i;
+
+   for ( i=0; i<faction_nstack; i++)
+      if ( faction_isKnown_( &faction_stack[i] ))
+         faction_rmFlag( &faction_stack[i], FACTION_KNOWN );
+}
+
+/**
+ * @brief Is the faction known?
+ */
+int faction_isKnown( int id )
+{
+   return faction_isKnown_( &faction_stack[id] );
+}
+
+/**
+ * @brief Sets the factions known state
+ */
+int faction_setKnown( int id, int state )
+{
+   if (state)
+      faction_setFlag( &faction_stack[id], FACTION_KNOWN );
+   else
+      faction_rmFlag( &faction_stack[id], FACTION_KNOWN );
+
+   return 0;
+}
 
 /**
  * @brief Gets a factions "real" name.
@@ -253,7 +307,7 @@ glTexture* faction_logoTiny( int f )
  *    @param f Faction to get the colour of.
  *    @return The faction's colour
  */
-glColour* faction_colour( int f )
+const glColour* faction_colour( int f )
 {
    if (!faction_isFaction(f)) {
       WARN("Faction id '%d' is invalid.",f);
@@ -313,6 +367,20 @@ lua_State *faction_getScheduler( int f )
    }
 
    return faction_stack[f].sched_state;
+}
+
+
+/**
+ * @brief Gets the equipper state associated to the faction scheduler.
+ */
+lua_State *faction_getEquipper( int f )
+{
+   if (!faction_isFaction(f)) {
+      WARN("Faction id '%d' is invalid.",f);
+      return NULL;
+   }
+
+   return faction_stack[f].equip_state;
 }
 
 
@@ -494,6 +562,9 @@ void faction_modPlayerRaw( int f, double mod )
    hparam[2].type    = HOOK_PARAM_SENTINEL;
    hooks_runParam( "standing", hparam );
 
+   /* Sanitize just in case. */
+   faction_sanitizePlayer( faction );
+
    /* Tell space the faction changed. */
    space_factionChange();
 }
@@ -541,7 +612,7 @@ double faction_getPlayerDef( int f )
  *    @param f Faction to get the colour of based on player's standing.
  *    @return Pointer to the colour.
  */
-glColour* faction_getColour( int f )
+const glColour* faction_getColour( int f )
 {
    if (f<0) return &cInert;
    else if (areAllies(FACTION_PLAYER,f)) return &cFriend;
@@ -736,7 +807,8 @@ static int faction_parse( Faction* temp, xmlNodePtr parent )
 {
    xmlNodePtr node;
    int player;
-   char buf[PATH_MAX], *dat;
+   char buf[PATH_MAX], *dat, *ctmp;
+   glColour *col;
    uint32_t ndat;
 
    /* Clear memory. */
@@ -744,7 +816,7 @@ static int faction_parse( Faction* temp, xmlNodePtr parent )
 
    temp->name = xml_nodeProp(parent,"name");
    if (temp->name == NULL)
-      WARN("Faction from "FACTION_DATA" has invalid or no name");
+      WARN("Faction from "FACTION_DATA_PATH" has invalid or no name");
 
    player = 0;
    node = parent->xmlChildrenNode;
@@ -763,14 +835,42 @@ static int faction_parse( Faction* temp, xmlNodePtr parent )
       xmlr_strd(node,"longname",temp->longname);
       xmlr_strd(node,"display",temp->displayname);
       if (xml_isNode(node, "colour")) {
-         temp->colour = col_fromName(xml_raw(node));
+         ctmp = xml_get(node);
+         if (ctmp != NULL)
+            temp->colour = col_fromName(xml_raw(node));
+         /* If no named colour is present, RGB attributes are used. */
+         else {
+            /* Initialize in case a colour channel is absent. */
+            col = calloc( 1, sizeof(glColour*) );
+
+            xmlr_attr(node,"r",ctmp);
+            if (ctmp != NULL) {
+               col->r = atof(ctmp);
+               free(ctmp);
+            }
+
+            xmlr_attr(node,"g",ctmp);
+            if (ctmp != NULL) {
+               col->g = atof(ctmp);
+               free(ctmp);
+            }
+
+            xmlr_attr(node,"b",ctmp);
+            if (ctmp != NULL) {
+               col->b = atof(ctmp);
+               free(ctmp);
+            }
+
+            col->a = 1.;
+            temp->colour = col;
+         }
          continue;
       }
 
       if (xml_isNode(node, "spawn")) {
          if (temp->sched_state != NULL)
             WARN("Faction '%s' has duplicate 'spawn' tag.", temp->name);
-         snprintf( buf, sizeof(buf), "ai/spawn/%s.lua", xml_raw(node) );
+         nsnprintf( buf, sizeof(buf), "dat/factions/spawn/%s.lua", xml_raw(node) );
          temp->sched_state = nlua_newState();
          nlua_loadStandard( temp->sched_state, 0 );
          dat = ndata_read( buf, &ndat );
@@ -786,15 +886,15 @@ static int faction_parse( Faction* temp, xmlNodePtr parent )
          continue;
       }
 
-      if (xml_isNode(node, "lua")) {
+      if (xml_isNode(node, "standing")) {
          if (temp->state != NULL)
-            WARN("Faction '%s' has duplicate 'lua' tag.", temp->name);
-         snprintf( buf, sizeof(buf), "dat/factions/%s.lua", xml_raw(node) );
+            WARN("Faction '%s' has duplicate 'standing' tag.", temp->name);
+         nsnprintf( buf, sizeof(buf), "dat/factions/standing/%s.lua", xml_raw(node) );
          temp->state = nlua_newState();
          nlua_loadStandard( temp->state, 0 );
          dat = ndata_read( buf, &ndat );
          if (luaL_dobuffer(temp->state, dat, ndat, buf) != 0) {
-            WARN("Failed to run spawn script: %s\n"
+            WARN("Failed to run standing script: %s\n"
                   "%s\n"
                   "Most likely Lua file has improper syntax, please check",
                   buf, lua_tostring(temp->state,-1));
@@ -805,12 +905,36 @@ static int faction_parse( Faction* temp, xmlNodePtr parent )
          continue;
       }
 
+      if (xml_isNode(node, "known")) {
+         faction_setFlag(temp, FACTION_KNOWN);
+         continue;
+      }
+
+      if (xml_isNode(node, "equip")) {
+         if (temp->equip_state != NULL)
+            WARN("Faction '%s' has duplicate 'equip' tag.", temp->name);
+         nsnprintf( buf, sizeof(buf), "dat/factions/equip/%s.lua", xml_raw(node) );
+         temp->equip_state = nlua_newState();
+         nlua_loadStandard( temp->equip_state, 0 );
+         dat = ndata_read( buf, &ndat );
+         if (luaL_dobuffer(temp->equip_state, dat, ndat, buf) != 0) {
+            WARN("Failed to run equip script: %s\n"
+                  "%s\n"
+                  "Most likely Lua file has improper syntax, please check",
+                  buf, lua_tostring(temp->equip_state,-1));
+            lua_close( temp->equip_state );
+            temp->equip_state = NULL;
+         }
+         free(dat);
+         continue;
+      }
+
       if (xml_isNode(node,"logo")) {
          if (temp->logo_small != NULL)
             WARN("Faction '%s' has duplicate 'logo' tag.", temp->name);
-         snprintf( buf, PATH_MAX, FACTION_LOGO_PATH"%s_small.png", xml_get(node));
+         nsnprintf( buf, PATH_MAX, FACTION_LOGO_PATH"%s_small.png", xml_get(node));
          temp->logo_small = gl_newImage(buf, 0);
-         snprintf( buf, PATH_MAX, FACTION_LOGO_PATH"%s_tiny.png", xml_get(node));
+         nsnprintf( buf, PATH_MAX, FACTION_LOGO_PATH"%s_tiny.png", xml_get(node));
          temp->logo_tiny = gl_newImage(buf, 0);
          continue;
       }
@@ -926,26 +1050,25 @@ int factions_load (void)
 {
    int mem;
    uint32_t bufsize;
-   char *buf = ndata_read( FACTION_DATA, &bufsize);
+   char *buf = ndata_read( FACTION_DATA_PATH, &bufsize);
 
    xmlNodePtr factions, node;
    xmlDocPtr doc = xmlParseMemory( buf, bufsize );
 
    node = doc->xmlChildrenNode; /* Factions node */
    if (!xml_isNode(node,XML_FACTION_ID)) {
-      ERR("Malformed "FACTION_DATA" file: missing root element '"XML_FACTION_ID"'");
+      ERR("Malformed "FACTION_DATA_PATH" file: missing root element '"XML_FACTION_ID"'");
       return -1;
    }
 
    factions = node->xmlChildrenNode; /* first faction node */
    if (factions == NULL) {
-      ERR("Malformed "FACTION_DATA" file: does not contain elements");
+      ERR("Malformed "FACTION_DATA_PATH" file: does not contain elements");
       return -1;
    }
 
    /* player faction is hard-coded */
-   faction_stack = malloc( sizeof(Faction) );
-   memset(faction_stack, 0, sizeof(Faction) );
+   faction_stack = calloc( 1, sizeof(Faction) );
    faction_stack[0].name = strdup("Player");
    faction_stack[0].flags = FACTION_STATIC | FACTION_INVISIBLE;
    faction_nstack++;
@@ -1050,6 +1173,8 @@ void factions_free (void)
          lua_close( faction_stack[i].sched_state );
       if (faction_stack[i].state != NULL)
          lua_close( faction_stack[i].state );
+      if (faction_stack[i].equip_state != NULL)
+         lua_close( faction_stack[i].equip_state );
    }
    free(faction_stack);
    faction_stack = NULL;
@@ -1077,7 +1202,10 @@ int pfaction_save( xmlTextWriterPtr writer )
       xmlw_startElem(writer,"faction");
 
       xmlw_attr(writer,"name","%s",faction_stack[i].name);
-      xmlw_str(writer, "%f", faction_stack[i].player);
+      xmlw_elem(writer, "standing", "%f", faction_stack[i].player);
+
+      if (faction_isKnown_(&faction_stack[i]))
+         xmlw_elemEmpty(writer, "known");
 
       xmlw_endElem(writer); /* "faction" */
    }
@@ -1096,7 +1224,7 @@ int pfaction_save( xmlTextWriterPtr writer )
  */
 int pfaction_load( xmlNodePtr parent )
 {
-   xmlNodePtr node, cur;
+   xmlNodePtr node, cur, sub;
    char *str;
    int faction;
 
@@ -1107,14 +1235,25 @@ int pfaction_load( xmlNodePtr parent )
          cur = node->xmlChildrenNode;
          do {
             if (xml_isNode(cur,"faction")) {
-               xmlr_attr(cur,"name",str);
+               xmlr_attr(cur, "name", str);
                faction = faction_get(str);
 
                if (faction != -1) { /* Faction is valid. */
 
-                  /* Must not be static. */
-                  if (!faction_isFlag( &faction_stack[faction], FACTION_STATIC ))
-                     faction_stack[faction].player = xml_getFloat(cur);
+                  sub = cur->xmlChildrenNode;
+                  do {
+                     if (xml_isNode(sub,"standing")) {
+
+                        /* Must not be static. */
+                        if (!faction_isFlag( &faction_stack[faction], FACTION_STATIC ))
+                           faction_stack[faction].player = xml_getFloat(sub);
+                        continue;
+                     }
+                     if (xml_isNode(sub,"known")) {
+                        faction_setFlag(&faction_stack[faction], FACTION_KNOWN);
+                        continue;
+                     }
+                  } while (xml_nextNode(sub));
                }
                free(str);
             }

@@ -13,7 +13,7 @@
 #include "naev.h"
 
 #include <stdlib.h>
-#include <string.h>
+#include "nstring.h"
 
 #define lua_c
 #include <lua.h>
@@ -33,9 +33,7 @@
 #include "toolkit.h"
 #include "nfile.h"
 #include "menu.h"
-
-
-#define CONSOLE_FONT_SIZE  10 /**< Size of the console font. */
+#include "conf.h"
 
 
 #define BUTTON_WIDTH    50 /**< Button width. */
@@ -75,6 +73,7 @@ static int cli_printOnly( lua_State *L );
 static const luaL_Reg cli_methods[] = {
    { "print", cli_printOnly },
    { "script", cli_script },
+   { "warn", cli_warn },
    {NULL, NULL}
 }; /**< Console only functions. */
 
@@ -93,12 +92,15 @@ static int cli_printCore( lua_State *L, int cli_only );
  */
 static int cli_printCore( lua_State *L, int cli_only )
 {
-   int n = lua_gettop(L);  /* number of arguments */
+   int n; /* number of arguments */
    int i;
    char buf[LINE_LENGTH];
    int p;
    const char *s;
+
+   n = lua_gettop(L);
    p = 0;
+
    lua_getglobal(L, "tostring");
    for (i=1; i<=n; i++) {
       lua_pushvalue(L, -1);  /* function to be called */
@@ -112,7 +114,7 @@ static int cli_printCore( lua_State *L, int cli_only )
          LOG( "%s", s );
 
       /* Add to console. */
-      p += snprintf( &buf[p], LINE_LENGTH-p, "%s%s", (i>1) ? "   " : "", s );
+      p += nsnprintf( &buf[p], LINE_LENGTH-p, "%s%s", (i>1) ? "   " : "", s );
       if (p >= LINE_LENGTH) {
          cli_addMessage(buf);
          p = 0;
@@ -121,8 +123,25 @@ static int cli_printCore( lua_State *L, int cli_only )
    }
 
    /* Add last line if needed. */
-   cli_addMessage(buf);
+   if (n > 0)
+      cli_addMessage(buf);
 
+   return 0;
+}
+
+
+/**
+ * @brief Barebones warn implementation for Lua, allowing scripts to print warnings to stderr.
+ *
+ * @luafunc warn()
+ */
+int cli_warn( lua_State *L )
+{
+   const char *msg;
+   
+   msg = luaL_checkstring(L,1);
+   logprintf( stderr, "Warning: %s\n", msg );
+   
    return 0;
 }
 
@@ -160,10 +179,10 @@ static int cli_script( lua_State *L )
 
    /* Try to find the file if it exists. */
    if (nfile_fileExists(fname))
-      snprintf( buf, sizeof(buf), "%s", fname );
+      nsnprintf( buf, sizeof(buf), "%s", fname );
    else {
       bbuf = strdup( naev_binary() );
-      snprintf( buf, sizeof(buf), "%s/%s", nfile_dirname( bbuf ), fname );
+      nsnprintf( buf, sizeof(buf), "%s/%s", nfile_dirname( bbuf ), fname );
       free(bbuf);
    }
 
@@ -216,7 +235,7 @@ static void cli_render( double bx, double by, double w, double h, void *data )
 {
    (void) data;
    int i, y;
-   glColour *c;
+   const glColour *c;
 
    /* Draw the text. */
    i = cli_viewport;
@@ -319,7 +338,7 @@ int cli_init (void)
 
    /* Set the font. */
    cli_font    = malloc( sizeof(glFont) );
-   gl_fontInit( cli_font, "dat/mono.ttf", CONSOLE_FONT_SIZE );
+   gl_fontInit( cli_font, "dat/mono.ttf", conf.font_size_console );
 
    /* Clear the buffer. */
    memset( cli_buffer, 0, sizeof(cli_buffer) );
@@ -341,13 +360,6 @@ void cli_exit (void)
    if (cli_state != NULL) {
       lua_close( cli_state );
       cli_state = NULL;
-   }
-
-   /* Free the font. */
-   if (cli_font != NULL) {
-      gl_freeFont( cli_font );
-      free( cli_font );
-      cli_font = NULL;
    }
 }
 
@@ -374,7 +386,7 @@ static void cli_input( unsigned int wid, char *unused )
       return;
 
    /* Put the message in the console. */
-   snprintf( buf, LINE_LENGTH, "%s %s",
+   nsnprintf( buf, LINE_LENGTH, "%s %s",
          cli_firstline ? "> " : ">>", str );
    cli_addMessage( buf );
 
