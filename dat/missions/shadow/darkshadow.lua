@@ -36,7 +36,7 @@ else -- default english
 
     title[3] = "A tip from the barman"
     text[6] = [[    You meet the barman's stare. He hesitates for a moment, then speaks up.
-    "Hey man. Are you %s by any chance?"
+    "Hey there. Are you %s by any chance?"
     You tell him that yes, that's you, and ask how he knows your name.
     "Well, your description was given to me by an old friend of mine. His name is Jarek. Do you know him?"
     You tell him that you don't know anyone by the name of Jarek, but you do know a man named Jorek. The barman visibly relaxes when he hears that name.
