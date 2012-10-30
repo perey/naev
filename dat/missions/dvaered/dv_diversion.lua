@@ -37,7 +37,7 @@ else -- default english
     text[4] = [[    "We will jump in approximately 8000 STU after you jump into %s, so the fighters must be far enough away by then not to come back and attack us."]]
     
     refusetitle = "Nuts"
-    refusetext = [[    "I see. In that case, I'm going to have to ask you to leave. My job is to recruit a civilian, but you're clearly not the man I'm looking for. You may excuse yourself, citizen."]]
+    refusetext = [[    "I see. In that case, I'm going to have to ask you to leave. My job is to recruit a civilian, but you're clearly not the pilot I'm looking for. You may excuse yourself, citizen."]]
     
     failtitle[1] = "You ran away!"
     failtext[1] = "You have left the system without first completing your mission. The operation ended in failure."

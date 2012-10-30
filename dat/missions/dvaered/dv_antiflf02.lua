@@ -53,7 +53,7 @@ else -- default english
     That concludes the pleasantries, and you are unceremoniously deposited outside the security compound. But at least you earned some money - and a chance to see some real action.]]
     
     refusetitle = "House Dvaered is out of luck"
-    refusetext = [[    "I see. In that case, I'm going to have to ask you to leave. My job is to recruit a civilian, but you're clearly not the man I'm looking for. You may excuse yourself, citizen."]]
+    refusetext = [[    "I see. In that case, I'm going to have to ask you to leave. My job is to recruit a civilian, but you're clearly not the pilot I'm looking for. You may excuse yourself, citizen."]]
     
     failtitle[1] = "You ran away!"
     failtext[1] = "You have left the system without first completing your mission. The operation ended in failure."
