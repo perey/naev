@@ -6,7 +6,7 @@
   <size>small</size>
   <mass>9</mass>
   <price>200000</price>
-  <description>Tricon's Spriggan engine is designed to minimize travel time between destinations. It offers serious speed at moderate maneuverability.</description>
+  <description>Tricon's Albatross engine is designed to minimize travel time between destinations. It offers serious speed at moderate maneuverability.</description>
   <gfx_store>afterburner</gfx_store>
  </general>
  <specific type="modification">
