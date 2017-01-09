@@ -119,6 +119,13 @@
    <pilot name="Proteron Archimedes" ship="Proteron Archimedes"></pilot>
   </pilots>
  </fleet>
+ <fleet name="Proteron Watson">
+  <ai>proteron</ai>
+  <faction>Proteron</faction>
+  <pilots>
+   <pilot name="Proteron Watson" ship="Proteron Watson"></pilot>
+  </pilots>
+ </fleet>
  <fleet name="Proteron Derivative">
   <ai>proteron</ai>
   <faction>Proteron</faction>
@@ -127,10 +134,31 @@
   </pilots>
  </fleet>
  <fleet name="Frontier Lancelot">
-  <ai>trader</ai>
+  <ai>frontier_police</ai>
   <faction>Frontier</faction>
   <pilots>
    <pilot name="Frontier Lancelot" ship="Lancelot"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Frontier Phalanx">
+  <ai>frontier_police</ai>
+  <faction>Frontier</faction>
+  <pilots>
+   <pilot name="Frontier Phalanx" ship="Phalanx"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Frontier Hyena">
+  <ai>frontier_police</ai>
+  <faction>Frontier</faction>
+  <pilots>
+   <pilot name="Frontier Hyena" ship="Hyena"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Frontier Ancestor">
+  <ai>frontier_police</ai>
+  <faction>Frontier</faction>
+  <pilots>
+   <pilot name="Frontier Ancestor" ship="Ancestor"></pilot>
   </pilots>
  </fleet>
  <fleet name="FLF Pacifier">
@@ -217,6 +245,13 @@
    <pilot name="Collective Drone" ship="Drone"></pilot>
   </pilots>
  </fleet>
+ <fleet name="Collective Heavy Drone">
+  <ai>collective</ai>
+  <faction>Collective</faction>
+  <pilots>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+  </pilots>
+ </fleet>
  <fleet name="Collective Lge Swarm">
   <ai>collective</ai>
   <faction>Collective</faction>
@@ -233,14 +268,14 @@
    <pilot name="Collective Drone" ship="Drone"></pilot>
    <pilot name="Collective Drone" ship="Drone"></pilot>
    <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
   </pilots>
  </fleet>
  <fleet name="Collective Sml Swarm">
@@ -251,8 +286,8 @@
    <pilot name="Collective Drone" ship="Drone"></pilot>
    <pilot name="Collective Drone" ship="Drone"></pilot>
    <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
-   <pilot name="Collective Drone" ship="Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
+   <pilot name="Collective Heavy Drone" ship="Heavy Drone"></pilot>
   </pilots>
  </fleet>
  <fleet name="Sirius Fidelity">
@@ -337,6 +372,13 @@
   <faction>Soromid</faction>
   <pilots>
    <pilot name="Soromid Arx" ship="Soromid Arx"></pilot>
+  </pilots>
+ </fleet>
+  <fleet name="Soromid Vox">
+  <ai>soromid</ai>
+  <faction>Soromid</faction>
+  <pilots>
+   <pilot name="Soromid Vox" ship="Soromid Vox"></pilot>
   </pilots>
  </fleet>
  <fleet name="Dvaered Vendetta">
@@ -533,6 +575,69 @@
    <pilot name="Empire Admonisher" ship="Empire Admonisher"></pilot>
   </pilots>
  </fleet>
+ <fleet name="Za'lek Light Drone">
+  <ai>collective</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Light Drone" ship="Za'lek Light Drone"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Scout Drone">
+  <ai>collective</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Scout Drone" ship="Za'lek Scout Drone"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Bomber Drone">
+  <ai>collective</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Bomber Drone" ship="Za'lek Bomber Drone"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Heavy Drone">
+  <ai>collective</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Heavy Drone" ship="Za'lek Heavy Drone"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Sting">
+  <ai>zalek</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Sting" ship="Za'lek Sting"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Demon">
+  <ai>zalek</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Demon" ship="Za'lek Demon"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Diablo">
+  <ai>zalek</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Diablo" ship="Za'lek Diablo"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Mephisto">
+  <ai>zalek</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Mephisto" ship="Za'lek Mephisto"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Za'lek Hephaestus">
+  <ai>zalek</ai>
+  <faction>Za'lek</faction>
+  <pilots>
+   <pilot name="Za'lek Hephaestus" ship="Za'lek Hephaestus"></pilot>
+  </pilots>
+ </fleet>
  <fleet name="Trinity">
   <ai>empire</ai>
   <faction>Empire</faction>
@@ -721,6 +826,122 @@
    <pilot name="Trader Koala" ship="Koala"></pilot>
   </pilots>
  </fleet>
+  <fleet name="Trader Convoy 3">
+  <ai>trader</ai>
+  <faction>Trader</faction>
+  <pilots>
+   <pilot name="Convoy Llama" ship="Llama"></pilot>
+   <pilot name="Convoy Llama" ship="Llama"></pilot>
+   <pilot name="Convoy Llama" ship="Llama"></pilot>
+  </pilots>
+ </fleet>
+   <fleet name="Trader Convoy 4">
+  <ai>trader</ai>
+  <faction>Trader</faction>
+  <pilots>
+   <pilot name="Convoy Koala" ship="Koala"></pilot>
+   <pilot name="Convoy Koala" ship="Koala"></pilot>
+   <pilot name="Convoy Koala" ship="Koala"></pilot>
+   <pilot name="Convoy Koala" ship="Koala"></pilot>
+  </pilots>
+ </fleet>
+   <fleet name="Trader Convoy 5">
+  <ai>trader</ai>
+  <faction>Trader</faction>
+  <pilots>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Trader Convoy 6">
+  <ai>trader</ai>
+  <faction>Trader</faction>
+  <pilots>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   </pilots>
+   </fleet>
+ <fleet name="Trader Convoy 8">
+  <ai>trader</ai>
+  <faction>Trader</faction>
+  <pilots>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Rhino" ship="Rhino"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+   <pilot name="Convoy Mule" ship="Mule"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Trader Ambush 1">
+  <ai>baddie_norun</ai>
+  <faction>Pirate</faction>
+  <pilots>
+   <pilot name="Pirate Ancestor" ship="Pirate Ancestor"></pilot>
+   <pilot name="Pirate Vendetta" ship="Pirate Vendetta"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   </pilots>
+</fleet>
+ <fleet name="Trader Ambush 2">
+  <ai>baddie_norun</ai>
+  <faction>Pirate</faction>
+  <pilots>
+   <pilot name="Pirate Ancestor" ship="Pirate Ancestor"></pilot>
+   <pilot name="Pirate Ancestor" ship="Pirate Vendetta"></pilot>
+   <pilot name="Pirate Vendetta" ship="Pirate Vendetta"></pilot>
+   <pilot name="Pirate Vendetta" ship="Pirate Vendetta"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Trader Ambush 3">
+  <ai>baddie_norun</ai>
+  <faction>Pirate</faction>
+  <pilots>
+   <pilot name="Pirate Admonisher" ship="Pirate Admonisher"></pilot>
+   <pilot name="Pirate Rhino" ship="Pirate Rhino"></pilot>
+   <pilot name="Pirate Rhino" ship="Pirate Rhino"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Trader Ambush 4">
+  <ai>baddie_norun</ai>
+  <faction>Pirate</faction>
+  <pilots>
+   <pilot name="Pirate Admonisher" ship="Pirate Admonisher"></pilot>
+   <pilot name="Pirate Phalanx" ship="Pirate Phalanx"></pilot>
+   <pilot name="Pirate Phalanx" ship="Pirate Phalanx"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Trader Ambush 5">
+  <ai>baddie_norun</ai>
+  <faction>Pirate</faction>
+  <pilots>
+   <pilot name="Pirate Kestrel" ship="Pirate Kestrel"></pilot>   
+   <pilot name="Pirate Admonisher" ship="Pirate Admonisher"></pilot>
+   <pilot name="Pirate Rhino" ship="Pirate Rhino"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+   <pilot name="Pirate Shark" ship="Pirate Shark"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+   <pilot name="Hyena" ship="Hyena"></pilot>
+  </pilots>
+ </fleet>
  <fleet name="Pirate Hyena Pack">
   <ai>pirate</ai>
   <faction>Pirate</faction>
@@ -761,6 +982,74 @@
    <pilot name="Dvaered Ancestor" ship="Dvaered Ancestor"></pilot>
    <pilot name="Dvaered Phalanx" ship="Dvaered Phalanx"></pilot>
    <pilot name="Dvaered Vigilance" ship="Dvaered Vigilance"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Thurion Ingenuity">
+  <ai>thurion</ai>
+  <faction>Thurion</faction>
+  <pilots>
+   <pilot name="Thurion Ingenuity" ship="Thurion Ingenuity"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Sirius Recon Force">
+  <ai>sirius</ai>
+  <faction>Sirius</faction>
+  <pilots>
+   <pilot name="Sirius Preacher" ship="Sirius Preacher"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Sirius Assault Force">
+  <ai>sirius</ai>
+  <faction>Sirius</faction>
+  <pilots>
+   <pilot name="Sirius Divinity" ship="Sirius Divinity"></pilot>
+   <pilot name="Sirius Dogma" ship="Sirius Dogma"></pilot>
+   <pilot name="Sirius Dogma" ship="Sirius Dogma"></pilot>
+   <pilot name="Sirius Preacher" ship="Sirius Preacher"></pilot>
+   <pilot name="Sirius Preacher" ship="Sirius Preacher"></pilot>
+   <pilot name="Sirius Preacher" ship="Sirius Preacher"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+   <pilot name="Sirius Fidelity" ship="Sirius Fidelity"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Nasin Sml Civilian">
+  <ai>civilian</ai>
+  <faction>Nasin</faction>
+  <pilots>
+   <pilot name="Nasin Llama" ship="Llama"></pilot>
+   <pilot name="Nasin Llama" ship="Llama"></pilot>
+   <pilot name="Nasin Mule" ship="Mule"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Nasin Sml Attack Fleet">
+  <ai>baddie</ai>
+  <faction>Nasin</faction>
+  <pilots>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Admonisher" ship="Admonisher"></pilot>
+  </pilots>
+ </fleet>
+ <fleet name="Nasin Med Defense Fleet">
+  <ai>baddie</ai>
+  <faction>Nasin</faction>
+  <pilots>
+   <pilot name="Nasin Shark" ship="Shark"></pilot>
+   <pilot name="Nasin Shark" ship="Shark"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Lancelot" ship="Lancelot"></pilot>
+   <pilot name="Nasin Admonisher" ship="Admonisher"></pilot>
+   <pilot name="Nasin Admonisher" ship="Admonisher"></pilot>
   </pilots>
  </fleet>
 </Fleets>

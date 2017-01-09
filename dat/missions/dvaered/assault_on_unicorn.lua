@@ -5,7 +5,7 @@
 
 --]]
 
-include "numstring.lua"
+include "dat/scripts/numstring.lua"
 
 lang = naev.lang()
 if lang == "es" then
@@ -37,7 +37,7 @@ function create ()
    misn.setDesc(misn_desc)
 
    misn_target_sys = system.get("Unicorn")
-   misn_return_sys = system.get("Pudas")
+   misn_return_sys = system.get("Amaroq")
    marker = misn.markerAdd( misn_target_sys, "computer" )
    marker2 = misn.markerAdd( misn_return_sys, "low" )
 end
@@ -72,7 +72,7 @@ function jumpin()
 end
 
 function death(pilot,killer)
-   if pilot:faction() == faction.get("Pirate") and killer == pilot.player() then
+   if pilot:faction() == faction.get("Pirate") and killer == player.pilot() then
       reward_table = {
          ["Hyena"]             =  1000,
          ["Pirate Shark"]      =  2000,

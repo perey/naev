@@ -88,7 +88,7 @@ end
 
 After the texts follow the functions.
 There are bascially two types, those defined inside this file and the API functions.
-The API functions can be found here: http://bobbens.dyndns.org/naev-lua/index.html
+The API functions can be found here: http://api.naev.org/
 You can usually identify them by their appearance for example:
 misn.accept ()
 system.cur ()
@@ -168,7 +168,7 @@ function create ()
    -- Set stuff up for the bar.
    -- Give our NPC a name and a portrait.
    misn.setNPC( npc_name, "scientist" )
-   -- Describe what the user should see when he clicks on the NPC in the bar.
+   -- Describe what the user should see when they click on the NPC in the bar.
    misn.setDesc( bar_desc )
 end
 
@@ -219,7 +219,7 @@ function accept ()
    -- Set up hooks.
    -- These will be called when a certain situation occurs ingame.
    -- In this case whenever you land.
-   -- See http://bobbens.dyndns.org/naev-lua/modules/hook.html for further hooks.
+   -- See http://api.naev.org/modules/hook.html for further hooks.
    -- "land" is just the name of the function that will be called by this hook.
    hook.land("land")
 end
@@ -230,10 +230,10 @@ function land ()
    if planet.cur() == targetworld then
       -- If so, remove the mission cargo.
       misn.cargoRm( cargoID )
-      -- Give the player his reward.
+      -- Give the player their reward.
       player.pay( reward )
 
-      -- Pop up a window that tells the player that he finished the mission and got his reward.
+      -- Pop up a window that tells the player they finished the mission and got their reward.
       tk.msg( title, string.format(misn_accomplished, reward) )
 
       -- Mark the mission as successfully finished.
@@ -245,7 +245,7 @@ end
 function abort ()
    -- Remove cargo.
    misn.cargoRm( cargoID )
-   -- Mark mission as unsuccessfully finished. It won't show up again if this mission is marked unique in mission.xml.
+   -- Finish the mission, but don't mark it as completed. The mission will appear again if the conditions are met.
    misn.finish( false )
 end
 

@@ -16,9 +16,15 @@
   <asset>Capricorn IIIa</asset>
   <asset>Durea</asset>
   <asset>Virtual Civilian Standard</asset>
+  <asset>Virtual Empire Small</asset>
   <asset>Virtual Trader Local</asset>
  </assets>
  <jumps>
+  <jump target="Daled">
+   <autopos/>
+   <hidden/>
+   <hide>1.000000</hide>
+  </jump>
   <jump target="Pontus">
    <autopos/>
    <hide>1.250000</hide>

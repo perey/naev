@@ -23,7 +23,6 @@
 #include "player.h"
 #include "opengl.h"
 #include "ai.h"
-#include "ai_extra.h"
 #include "hook.h"
 
 #define COMM_WDWNAME    "Communication Channel" /**< Map window name. */
@@ -151,7 +150,7 @@ int comm_openPilot( unsigned int pilot )
 
    /* Run generic hail hooks. */
    hparam[0].type       = HOOK_PARAM_PILOT;
-   hparam[0].u.lp.pilot = p->id;
+   hparam[0].u.lp       = p->id;
    hparam[1].type       = HOOK_PARAM_SENTINEL;
    run = 0;
    run += hooks_runParam( "hail", hparam );
@@ -166,7 +165,7 @@ int comm_openPilot( unsigned int pilot )
    }
 
    /* Create the pilot window. */
-   wid = comm_openPilotWindow();
+   comm_openPilotWindow();
 
    return 0;
 }
@@ -277,7 +276,7 @@ static unsigned int comm_open( glTexture *gfx, int faction,
    int namex, standx, logox, y;
    int namew, standw, logow, width;
    glTexture *logo;
-   char *stand;
+   const char *stand;
    unsigned int wid;
    const glColour *c;
    glFont *font;
@@ -296,22 +295,15 @@ static unsigned int comm_open( glTexture *gfx, int faction,
    logo           = faction_logoSmall(faction);
 
    /* Get standing colour / text. */
-   if (bribed) {
-      stand = "Neutral";
-      c     = &cNeutral;
-   }
-   else if (override < 0) {
-      stand = "Hostile";
-      c     = &cHostile;
-   }
-   else if (override > 0) {
-      stand = "Friendly";
-      c     = &cFriend;
-   }
-   else {
-      stand = faction_getStandingBroad(faction_getPlayer(faction));
-      c     = faction_getColour( faction );
-   }
+   stand = faction_getStandingBroad( faction, bribed, override );
+   if (bribed)
+      c = &cNeutral;
+   else if (override < 0)
+      c = &cHostile;
+   else if (override > 0)
+      c = &cFriend;
+   else
+      c = faction_getColour( faction );
 
    namew  = gl_printWidthRaw( NULL, name );
    standw = gl_printWidthRaw( NULL, stand );
@@ -354,7 +346,7 @@ static unsigned int comm_open( glTexture *gfx, int faction,
       aspect = comm_graphic->w / comm_graphic->h;
       gw = MIN( GRAPHIC_WIDTH,  comm_graphic->w );
       gh = MIN( GRAPHIC_HEIGHT, comm_graphic->h );
-   
+
       if (comm_graphic->w > GRAPHIC_WIDTH || comm_graphic->h > GRAPHIC_HEIGHT) {
          gh = MIN( GRAPHIC_HEIGHT, GRAPHIC_HEIGHT / aspect );
          gw = MIN( GRAPHIC_WIDTH, GRAPHIC_WIDTH * aspect );

@@ -33,7 +33,8 @@
 /*
  * Global sound properties.
  */
-static double sound_curVolume = 1.; /**< Current sound volume. */
+static double sound_curVolumeLin = 1.; /**< Current sound volume (linear). */
+static double sound_curVolume = 1.; /**< Current sound volume (logarithmic). */
 static double sound_speedVolume = 1.; /**< Speed volume. */
 static unsigned char sound_mixVolume = 0; /**< Actual in-game used volume. */
 static double sound_pos[3]; /**< Position of listener. */
@@ -110,7 +111,12 @@ static void print_MixerVersion (void)
    Mix_QuerySpec(&frequency, &format, &channels);
    MIX_VERSION(&compiled);
    linked = Mix_Linked_Version();
+#if SDL_VERSION_ATLEAST(2,0,0)
+   const char *drvname = SDL_GetCurrentAudioDriver();
+   strncpy( device, drvname, PATH_MAX );
+#else /* SDL_VERSION_ATLEAST(2,0,0) */
    SDL_AudioDriverName(device, PATH_MAX);
+#endif /* SDL_VERSION_ATLEAST(2,0,0) */
 
    /* Version itself. */
    DEBUG("SDL_Mixer Started: %d Hz %s", frequency,
@@ -370,7 +376,12 @@ static void sound_mix_volumeUpdate (void)
 int sound_mix_volume( const double vol )
 {
    /* Calculate volume. */
-   sound_curVolume = CLAMP(0., 1., vol);
+   sound_curVolumeLin = CLAMP(0., 1., vol);
+   if (vol > 0.) /* Floor of -48 dB (0.00390625 amplitude) */
+      sound_curVolume = 1. / pow(2, (1 - vol) * 8);
+   else
+      sound_curVolume = 0.;
+
    sound_mixVolume = (unsigned char) (MIX_MAX_VOLUME * CLAMP(0., 1., sound_speedVolume*sound_curVolume));
    /* Update volume. */
    sound_mix_volumeUpdate();
@@ -379,11 +390,22 @@ int sound_mix_volume( const double vol )
 
 
 /**
- * @brief Gets the current sound volume.
+ * @brief Gets the current sound volume (linear).
  *
  *    @return The current sound volume level.
  */
 double sound_mix_getVolume (void)
+{
+   return sound_curVolumeLin;
+}
+
+
+/**
+ * @brief Gets the current sound volume (logarithmic).
+ *
+ *    @return The current sound volume level.
+ */
+double sound_mix_getVolumeLog (void)
 {
    return sound_curVolume;
 }
@@ -407,7 +429,7 @@ int sound_mix_load( alSound *s, const char *filename )
    rw = ndata_rwops( filename );
 
    /* bind to buffer */
-   s->u.mix.buf = Mix_LoadWAV_RW(rw,1);
+   s->u.mix.buf = Mix_LoadWAV_RW( rw, 1 );
    if (s->u.mix.buf == NULL) {
       DEBUG("Unable to load sound '%s': %s", filename, Mix_GetError());
       return -1;

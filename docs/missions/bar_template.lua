@@ -3,9 +3,9 @@
    This is a Naev mission template.
    In this document aims to provide a structure on which to build many Naev missions.
    The possibilities are endless, so this will not apply to every possible mission.
-   For more information on Naev, please visit: http://code.google.com/p/naev/ 
+   For more information on Naev, please visit: http://naev.org/
    Naev missions are written in the Lua programming language: http://www.lua.org/
-   There is documentation on Naev's Lua API at: http://bobbens.dyndns.org/naev-lua/index.html
+   There is documentation on Naev's Lua API at: http://api.naev.org/
    You can study the source code of missions in [path_to_Naev_folder]/naev/dat/missions/
 
    MISSION: <NAME GOES HERE>
@@ -20,7 +20,7 @@ else -- Default to English
 
 -- This section stores the strings (text) for the mission.
 
--- Bar information, describes how he appears in the bar
+-- Bar information, describes how the person appears in the bar
    bar_desc = ""
 
 -- Mission details. We store some text for the mission with specific variables.
@@ -51,8 +51,8 @@ end
 --[[ 
 First you need to *create* the mission.  This is *obligatory*.
 
-You have to set the NPC and the description, these will show up at the bar with
-the character that gives the mission and his description.
+You have to set the NPC and the description. These will show up at the bar with
+the character that gives the mission and the character's description.
 --]]
 function create ()
    misn.setNPC( "A Guy", "none" )

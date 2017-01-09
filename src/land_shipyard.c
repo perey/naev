@@ -17,10 +17,10 @@
 #include <stdio.h>
 #include "nstring.h"
 #include <math.h>
-
+#include <assert.h>
 #include "log.h"
 #include "player.h"
-#include "land.h"
+#include "space.h"
 #include "toolkit.h"
 #include "tk/toolkit_priv.h"
 #include "dialogue.h"
@@ -60,6 +60,9 @@ void shipyard_open( unsigned int wid )
    int th;
    int y;
    const char *buf;
+
+   /* Mark as generated. */
+   land_tabGenerate(LAND_WINDOW_SHIPYARD);
 
    /* Init vars. */
    shipyard_selected = NULL;
@@ -124,6 +127,7 @@ void shipyard_open( unsigned int wid )
          "Energy:\n"
          "Cargo Space:\n"
          "Fuel:\n"
+         "Fuel Use:\n"
          "Price:\n"
          "Money:\n"
          "License:\n";
@@ -135,7 +139,7 @@ void shipyard_open( unsigned int wid )
          w-(40+iw+20+100)-20, th, 0, "txtDDesc", &gl_smallFont, &cBlack, NULL );
    y -= th;
    window_addText( wid, 20+iw+40, y,
-         w-(20+iw+40) - 20, 185, 0, "txtDescription",
+         w-(20+iw+40) - 180, 185, 0, "txtDescription",
          &gl_smallFont, NULL, NULL );
 
    /* set up the ships to buy/sell */
@@ -173,9 +177,10 @@ void shipyard_open( unsigned int wid )
 void shipyard_update( unsigned int wid, char* str )
 {
    (void)str;
-   char *shipname;
+   char *shipname, *license_text;
    Ship* ship;
    char buf[PATH_MAX], buf2[ECON_CRED_STRLEN], buf3[ECON_CRED_STRLEN];
+   size_t len;
 
    shipname = toolkit_getImageArray( wid, "iarShipyard" );
 
@@ -204,6 +209,7 @@ void shipyard_update( unsigned int wid, char* str )
             "NA\n"
             "NA\n"
             "NA\n"
+            "NA\n"
             "NA\n" );
       window_modifyImage( wid, "imgTarget", NULL, 0, 0 );
       window_modifyText( wid, "txtStats", NULL );
@@ -221,8 +227,21 @@ void shipyard_update( unsigned int wid, char* str )
    /* update text */
    window_modifyText( wid, "txtStats", ship->desc_stats );
    window_modifyText( wid, "txtDescription", ship->description );
-   credits2str( buf2, ship_buyPrice(ship), 2 );
+   price2str( buf2, ship_buyPrice(ship), player.p->credits, 2 );
    credits2str( buf3, player.p->credits, 2 );
+
+   /* Remove the word " License".  It's redundant and makes the text overflow
+      into another text box */
+   license_text = ship->license;
+   if (license_text) {
+      len = strlen(ship->license);
+      if (strcmp(" License", ship->license + len - 8) == 0) {
+         license_text = malloc(len - 7);
+         assert(license_text);
+         memcpy(license_text, ship->license, len - 8);
+         license_text[len - 8] = '\0';
+      }
+   }
    nsnprintf( buf, PATH_MAX,
          "%s\n"
          "%s\n"
@@ -241,6 +260,7 @@ void shipyard_update( unsigned int wid, char* str )
          "%.0f MJ (%.1f MW)\n"
          "%.0f tons\n"
          "%d units\n"
+         "%.0f units\n"
          "%s credits\n"
          "%s credits\n"
          "%s\n",
@@ -261,12 +281,16 @@ void shipyard_update( unsigned int wid, char* str )
          ship->energy, ship->energy_regen,
          ship->cap_cargo,
          ship->fuel,
+         ship->fuel_consumption,
          buf2,
          buf3,
-         (ship->license != NULL) ? ship->license : "None" );
+         (license_text != NULL) ? license_text : "None" );
    window_modifyText( wid,  "txtDDesc", buf );
 
-   if (!shipyard_canBuy( shipname ))
+   if (license_text != ship->license)
+      free(license_text);
+
+   if (!shipyard_canBuy( shipname, land_planet ))
       window_disableButtonSoft( wid, "btnBuyShip");
    else
       window_enableButton( wid, "btnBuyShip");
@@ -314,6 +338,9 @@ static void shipyard_buy( unsigned int wid, char* str )
    Ship* ship;
 
    shipname = toolkit_getImageArray( wid, "iarShipyard" );
+   if (strcmp(shipname, "None") == 0)
+      return;
+
    ship = ship_get( shipname );
 
    credits_t targetprice = ship_buyPrice(ship);
@@ -332,7 +359,6 @@ static void shipyard_buy( unsigned int wid, char* str )
       return;
    }
    player_modCredits( -targetprice ); /* ouch, paying is hard */
-   land_checkAddRefuel();
 
    /* Update shipyard. */
    shipyard_update(wid, NULL);
@@ -342,7 +368,7 @@ static void shipyard_buy( unsigned int wid, char* str )
  * @brief Makes sure it's sane to buy a ship.
  *    @param shipname Ship being bought.
  */
-int shipyard_canBuy ( char *shipname )
+int shipyard_canBuy ( char *shipname, Planet *planet )
 {
    Ship* ship;
    ship = ship_get( shipname );
@@ -352,7 +378,8 @@ int shipyard_canBuy ( char *shipname )
    price = ship_buyPrice(ship);
 
    /* Must have enough credits and the necessary license. */
-   if (!player_hasLicense(ship->license)) {
+   if ((!player_hasLicense(ship->license)) &&
+         ((planet == NULL) || (!planet_isBlackMarket(planet)))) {
       land_errDialogueBuild( "You lack the %s.", ship->license );
       failure = 1;
    }
@@ -447,6 +474,9 @@ static void shipyard_trade( unsigned int wid, char* str )
    Ship* ship;
 
    shipname = toolkit_getImageArray( wid, "iarShipyard" );
+   if (strcmp(shipname, "None") == 0)
+      return;
+
    ship = ship_get( shipname );
 
    credits_t targetprice = ship_buyPrice(ship);
@@ -486,7 +516,11 @@ static void shipyard_trade( unsigned int wid, char* str )
 
    player_modCredits( playerprice - targetprice ); /* Modify credits by the difference between ship values. */
 
-   land_checkAddRefuel();
+   land_refuel();
+
+   /* The newShip call will trigger a loadGUI that will recreate the land windows. Therefore the land ID will
+    * be void. We must reload in in order to properly update it again.*/
+   wid = land_getWid(LAND_WINDOW_SHIPYARD);
 
    /* Update shipyard. */
    shipyard_update(wid, NULL);

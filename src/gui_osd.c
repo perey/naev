@@ -82,7 +82,7 @@ static int osd_sortCompare( const void *arg1, const void *arg2 )
 
    /* Compare priority. */
    if (osd1->priority > osd2->priority)
-      return +1;                                                                                                                           
+      return +1;
    else if (osd1->priority < osd2->priority)
       return -1;
 
@@ -293,6 +293,10 @@ int osd_destroy( unsigned int osd )
 
       /* Recalculate dimensions. */
       osd_calcDimensions();
+
+      /* Remove the OSD, if empty. */
+      if (array_size(osd_list) == 0)
+         osd_exit();
 
       /* Done here. */
       return 0;

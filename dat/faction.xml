@@ -4,15 +4,18 @@
   <static />
   <invisible />
   <player>0</player>
+  <standing>static</standing>
   <allies />
   <enemies />
  </faction>
  <faction name="Independent">
+  <static />
+  <invisible />
   <known/>
   <player>3</player>
   <colour>blue</colour>
   <spawn>independent</spawn>
-  <standing>independent</standing>
+  <standing>static</standing>
   <allies>
   </allies>
   <enemies>
@@ -20,12 +23,13 @@
   </enemies>
  </faction>
  <faction name="Civilian">
-  <invisible />
   <static />
+  <invisible />
   <known/>
   <player>0</player>
   <colour>black</colour>
   <spawn>civilian</spawn>
+  <standing>static</standing>
   <allies>
   </allies>
   <enemies>
@@ -53,7 +57,7 @@
   <player>3</player>
   <colour>yellow</colour>
   <spawn>frontier</spawn>
-  <standing>independent</standing>
+  <standing>frontier</standing>
   <allies>
   </allies>
   <enemies>
@@ -96,6 +100,8 @@
    <enemy>Independent</enemy>
    <enemy>Goddard</enemy>
    <enemy>Proteron</enemy>
+   <enemy>Thurion</enemy>
+   <enemy>Nasin</enemy>
   </enemies>
  </faction>
  <faction name="Empire">
@@ -122,18 +128,30 @@
   <player>0</player>
   <spawn>soromid</spawn>
   <standing>soromid</standing>
+  <equip>soromid</equip>
   <allies/>
   <enemies>
    <enemy>Pirate</enemy>
   </enemies>
  </faction>
+ <faction name="Thurion">
+  <logo>thurion</logo>
+  <colour>grey50</colour>
+  <player>1</player>
+  <spawn>thurion</spawn>
+  <standing>thurion</standing>
+  <equip>empire</equip>
+  <enemies>
+   <enemy>Pirate</enemy>
+  </enemies>
+ </faction>
  <faction name="Collective">
-  <static />
   <known/>
   <logo>collective</logo>
   <player>-100</player>
   <colour>silver</colour>
   <spawn>collective</spawn>
+  <standing>collective</standing>
   <equip>collective</equip>
   <enemies>
    <enemy>Empire</enemy>
@@ -145,7 +163,7 @@
   <logo>flf</logo>
   <longname>Frontier Liberation Front</longname>
   <player>0</player>
-  <colour>orange</colour>
+  <colour>yellow</colour>
   <spawn>flf</spawn>
   <standing>flf</standing>
   <equip>pirate</equip>
@@ -173,10 +191,12 @@
  <faction name="Za'lek">
   <known/>
   <logo>zalek</logo>
+  <colour>DarkRed</colour>
   <longname>House Za'lek</longname>
   <player>2</player>
   <spawn>zalek</spawn>
   <standing>zalek</standing>
+  <equip>zalek</equip>
   <allies>
   </allies>
   <enemies>
@@ -196,6 +216,7 @@
   </allies>
   <enemies>
    <enemy>Pirate</enemy>
+   <enemy>Nasin</enemy>
   </enemies>
  </faction>
  <faction name="Goddard">
@@ -205,7 +226,7 @@
   <longname>House Goddard</longname>
   <player>2</player>
   <spawn>goddard</spawn>
-  <standing>independent</standing>
+  <standing>goddard</standing>
   <equip>empire</equip>
   <allies>
    <ally>Empire</ally>
@@ -215,33 +236,37 @@
   </enemies>
  </faction>
  <faction name="Mercenary">
-  <invisible />
   <static />
+  <invisible />
   <player>0</player>
+  <standing>static</standing>
   <allies />
   <enemies />
  </faction>
  <faction name="Raider">
-  <invisible />
   <static />
+  <invisible />
   <longname>Galactic Pirates</longname>
   <player>-100</player>
   <colour>red</colour>
+  <standing>static</standing>
   <enemies>
    <enemy>Trader</enemy>
   </enemies>
  </faction>
  <faction name="Derelict">
-  <invisible />
   <static />
+  <invisible />
   <player>0</player>
+  <standing>static</standing>
   <allies />
   <enemies />
  </faction>
  <faction name="Four Winds">
-  <invisible />
   <static />
+  <invisible />
   <player>0</player>
+  <standing>static</standing>
   <allies />
   <enemies>
    <enemy>Shadow_pirates</enemy>
@@ -250,9 +275,10 @@
  </faction>
  <faction name="Rogue Four Winds">
   <display>Four Winds</display>
-  <invisible />
   <static />
+  <invisible />
   <player>0</player>
+  <standing>static</standing>
   <allies />
   <enemies>
    <enemy>Four Winds</enemy>
@@ -260,20 +286,22 @@
  </faction>
  <faction name="Shadow_pirates">
   <display>Pirate</display>
-  <invisible />
   <static />
+  <invisible />
   <allies />
   <player>-100</player>
+  <standing>static</standing>
   <enemies>
    <enemy>Four Winds</enemy>
    <enemy>Diplomatic</enemy>
   </enemies>
  </faction>
  <faction name="Diplomatic">
-  <invisible />
   <static />
+  <invisible />
   <player>0</player>
   <colour>blue</colour>
+  <standing>static</standing>
   <allies>
   </allies>
   <enemies>
@@ -281,51 +309,67 @@
   </enemies>
  </faction>
  <faction name="Associates">
-  <invisible />
   <static />
+  <invisible />
   <allies />
   <player>0</player>
+  <standing>static</standing>
   <enemies>
    <enemy>Thugs</enemy>
   </enemies>
  </faction>
  <faction name="Thugs">
-  <invisible />
   <static />
+  <invisible />
   <allies />
   <player>0</player>
+  <standing>static</standing>
   <enemies>
    <enemy>Associates</enemy>
   </enemies>
  </faction>
  <faction name="Achack_sirius">
   <display>Sirius</display>
-  <invisible />
   <static />
+  <invisible />
   <allies />
   <player>0</player>
+  <standing>static</standing>
   <enemies>
    <enemy>Achack_thugs</enemy>
   </enemies>
  </faction>
  <faction name="Achack_thugs">
   <display>Thugs</display>
-  <invisible />
   <static />
+  <invisible />
   <allies />
   <player>0</player>
+  <standing>static</standing>
   <enemies>
    <enemy>Achack_sirius</enemy>
   </enemies>
  </faction>
  <faction name="Kidnappers">
   <display>Pirate</display>
-  <invisible />
   <static />
+  <invisible />
   <logo>pirate</logo>
   <colour>red</colour>
   <allies />
   <player>0</player>
+  <standing>static</standing>
   <enemies />
+ </faction>
+ <faction name="Nasin">
+  <invisible />
+  <logo>sirius</logo>
+  <standing>nasin</standing>
+  <allies />
+  <player>0</player>
+  <enemies>
+   <enemy>Sirius</enemy>
+   <enemy>Pirate</enemy>
+  </enemies>
  </faction>
 </Factions>

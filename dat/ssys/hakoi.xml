@@ -16,6 +16,7 @@
   <asset>Em 4</asset>
   <asset>Em 5</asset>
   <asset>INSS-1</asset>
+  <asset>Virtual Civilian Standard</asset>
  </assets>
  <jumps>
   <jump target="Eneguoz">
@@ -24,6 +25,11 @@
   </jump>
   <jump target="Salvador">
    <pos x="9216.302743" y="120.608077"/>
+   <hidden/>
+   <hide>1.000000</hide>
+  </jump>
+  <jump target="Trask">
+   <autopos/>
    <hidden/>
    <hide>1.000000</hide>
   </jump>

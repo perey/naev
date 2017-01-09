@@ -16,7 +16,7 @@
  <general>
   <class>1</class>
   <population>52000</population>
-  <hide>0.750000</hide>
+  <hide>0.500000</hide>
   <services>
    <land>emp_mil_restricted</land>
    <refuel/>
@@ -33,10 +33,14 @@
    <commodity>Luxury Goods</commodity>
    <commodity>Industrial Goods</commodity>
   </commodities>
-  <description>Arcturus Gamma is the Empire's first line of defense when it comes to their core systems. Piracy is nearly non-existent in the core systems due to the large standing force stationed here, and their routine patrols.</description>
-  <bar>A truly utilitarian place, the Arcturus Gamma bar is metallic grey, meticulously maintained, and full of off-duty Empire soldiers.</bar>
+  <description>Arcturus Gamma is the Empire's first line of defense when it comes to their core systems. Piracy is nearly non-existent in the core systems due to the large standing force stationed here and their routine patrols.</description>
+  <bar>A truly utilitarian place, the Arcturus Gamma bar is metallic grey, meticulously maintained and full of off-duty Empire soldiers - not a place to get into a fight.</bar>
  </general>
  <tech>
+  <item>Engines High</item>
+  <item>Systems High</item>
+  <item>Systems Elite</item>
+  <item>Hulls High</item>
   <item>Laser 1</item>
   <item>Laser 2</item>
   <item>Laser 3</item>

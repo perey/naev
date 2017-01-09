@@ -179,7 +179,7 @@ end
 function derelict_exploded()
    player.pilot():control(false)
    player.pilot():setHealth(42, 0)
-   destroyEvent()
+  destroyevent()
 end
 
 function missionevent()

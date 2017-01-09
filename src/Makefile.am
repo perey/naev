@@ -10,7 +10,6 @@ CODE_SOURCE = \
 	ai.c \
 	array.c \
 	background.c \
-	base64.c \
 	board.c \
 	camera.c \
 	claim.c \
@@ -49,6 +48,7 @@ CODE_SOURCE = \
 	land.c \
 	land_outfits.c \
 	land_shipyard.c \
+	land_trade.c \
 	load.c \
 	log.c \
 	map.c \
@@ -104,6 +104,7 @@ CODE_SOURCE = \
 	ntime.c \
 	nxml.c \
 	nxml_lua.c \
+	nzip.c \
 	opengl.c \
 	opengl_ext.c \
 	opengl_matrix.c \
@@ -112,7 +113,6 @@ CODE_SOURCE = \
 	opengl_vbo.c \
 	options.c \
 	outfit.c \
-	pack.c \
 	pause.c \
 	perlin.c \
 	physics.c \
@@ -145,10 +145,8 @@ CODE_SOURCE = \
 	unidiff.c \
 	weapon.c \
 	ai.h \
-	ai_extra.h \
 	array.h \
 	background.h \
-	base64.h \
 	board.h \
 	camera.h \
 	claim.h \
@@ -247,6 +245,7 @@ CODE_SOURCE = \
 	ntime.h \
 	nxml.h \
 	nxml_lua.h \
+	nzip.h \
 	opengl.h \
 	opengl_ext.h \
 	opengl_matrix.h \
@@ -255,7 +254,6 @@ CODE_SOURCE = \
 	opengl_vbo.h \
 	options.h \
 	outfit.h \
-	pack.h \
 	pause.h \
 	perlin.h \
 	physics.h \

@@ -65,6 +65,7 @@ extern int systems_nstack; /**< Number of star systems. */
  * Nodal analysis simulation for dynamic economies.
  */
 static int econ_initialized   = 0; /**< Is economy system initialized? */
+static int econ_queued        = 0; /**< Whether there are any queued updates. */
 static int *econ_comm         = NULL; /**< Commodities to calculate. */
 static int econ_nprices       = 0; /**< Number of prices to calculate. */
 static cs *econ_G             = NULL; /**< Admittance matrix. */
@@ -109,6 +110,27 @@ void credits2str( char *str, credits_t credits, int decimals )
       nsnprintf (str, ECON_CRED_STRLEN, "%"CREDITS_PRI, credits );
 }
 
+/**
+ * @brief Given a price and on-hand credits, outputs a colourized string.
+ *
+ *    @param[out] str Output is stored here, must have at least a length of 32
+ *                     char.
+ *    @param price Price to display.
+ *    @param credits Credits available.
+ *    @param decimals Decimals to use.
+ */
+void price2str(char *str, credits_t price, credits_t credits, int decimals )
+{
+   char *buf;
+
+   credits2str(str, price, decimals);
+   if (price <= credits)
+      return;
+
+   buf = strdup(str);
+   nsnprintf(str, ECON_CRED_STRLEN, "\er%s\e0", buf);
+   free(buf);
+}
 
 /**
  * @brief Gets a commodity by name.
@@ -155,6 +177,8 @@ static void commodity_freeOne( Commodity* com )
       free(com->name);
    if (com->description)
       free(com->description);
+   if (com->gfx_store)
+      gl_freeTexture(com->gfx_store);
 
    /* Clear the memory. */
    memset(com, 0, sizeof(Commodity));
@@ -212,8 +236,20 @@ static int commodity_parse( Commodity *temp, xmlNodePtr parent )
       xml_onlyNodes(node);
       xmlr_strd(node, "description", temp->description);
       xmlr_int(node, "price", temp->price);
-      WARN("Commodity '%s' has unknown node '%s'.", temp->name, node->name);
+      if (xml_isNode(node,"gfx_store")) {
+         temp->gfx_store = xml_parseTexture( node,
+               COMMODITY_GFX_PATH"%s.png", 1, 1, OPENGL_TEX_MIPMAPS );
+         if (temp->gfx_store != NULL) {
+         } else {
+            temp->gfx_store = gl_newImage( COMMODITY_GFX_PATH"_default.png", 0 );
+         }
+         continue;
+      }
    } while (xml_nextNode(node));
+   if ((temp->gfx_store == NULL) && (temp->price>0)) {
+      WARN("No <gfx_store> node found, using default texture for commodity \"%s\"", temp->name);
+      temp->gfx_store = gl_newImage( COMMODITY_GFX_PATH"_default.png", 0 );
+   }
 
 #if 0 /* shouldn't be needed atm */
 #define MELEMENT(o,s)   if (o) WARN("Commodity '%s' missing '"s"' element", temp->name)
@@ -559,6 +595,29 @@ int economy_init (void)
 
 
 /**
+ * @brief Increments the queued update counter.
+ *
+ * @sa economy_execQueued
+ */
+void economy_addQueuedUpdate (void)
+{
+   econ_queued++;
+}
+
+
+/**
+ * @brief Calls economy_refresh if an economy update is queued.
+ */
+int economy_execQueued (void)
+{
+   if (econ_queued)
+      return economy_refresh();
+
+   return 0;
+}
+
+
+/**
  * @brief Regenerates the economy matrix.  Should be used if the universe
  *  changes in any permanent way.
  */
@@ -652,6 +711,7 @@ int economy_update( unsigned int dt )
    /* Clean up. */
    free(X);
 
+   econ_queued = 0;
    return 0;
 }
 

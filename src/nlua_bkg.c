@@ -87,41 +87,41 @@ static int bkgL_clear( lua_State *L )
  * @usage bkg.image( img, 0, 0, 0.1, 1., col.new(1,0,0) ) -- Now with colour
  * @usage bkg.image( img, 0, 0, 0.1, 1., col.new(1,0,0), true ) -- Now with colour and on the foreground
  *
- *    @luaparam image Image to use.
- *    @luaparam x X position.
- *    @luaparam y Y position.
- *    @luaparam move Fraction of a pixel to move when the player moves one pixel.
- *    @luaparam scale How much to scale the image.
- *    @luaparam col Colour to tint image (optional parameter).
- *    @luaparam foreground Whether or not it should be rendered above the stars (optional parameter ). Defaults to false.
- *    @luareturn ID of the background.
+ *    @luatparam Tex image Image to use.
+ *    @luatparam number x X position.
+ *    @luatparam number y Y position.
+ *    @luatparam number move Fraction of a pixel to move when the player moves one pixel.
+ *    @luatparam number scale How much to scale the image.
+ *    @luatparam[opt] Colour col Colour to tint image.
+ *    @luatparam[opt=false] boolean foreground Whether or not it should be rendered above the stars.
+ *    @luatreturn number ID of the background.
  * @luafunc image( image, x, y, move, scale, col, foreground )
  */
 static int bkgL_image( lua_State *L )
 {
-   LuaTex *lt;
+   glTexture *tex;
    double x,y, move, scale;
-   LuaColour *lc;
+   const glColour *col;
    unsigned int id;
    int foreground;
 
    /* Parse parameters. */
-   lt    = luaL_checktex(L,1);
+   tex   = luaL_checktex(L,1);
    x     = luaL_checknumber(L,2);
    y     = luaL_checknumber(L,3);
    move  = luaL_checknumber(L,4);
    scale = luaL_checknumber(L,5);
    if (lua_iscolour(L,6)) {
-      lc    = lua_tocolour(L,6);
+      col = lua_tocolour(L,6);
       foreground = lua_toboolean(L,7);
    }
    else {
-      lc    = NULL;
+      col = &cWhite;
       foreground = lua_toboolean(L,6);
    }
 
    /* Create image. */
-   id = background_addImage( lt->tex, x, y, move, scale, (lc!=NULL) ? &lc->col : &cWhite, foreground );
+   id = background_addImage( tex, x, y, move, scale, col, foreground );
    lua_pushnumber(L,id);
    return 1;
 }

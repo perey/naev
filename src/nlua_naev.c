@@ -27,6 +27,7 @@
 
 /* Naev methods. */
 static int naev_lang( lua_State *L );
+static int naev_ticks( lua_State *L );
 static int naev_keyGet( lua_State *L );
 static int naev_keyEnable( lua_State *L );
 static int naev_keyEnableAll( lua_State *L );
@@ -35,6 +36,7 @@ static int naev_eventStart( lua_State *L );
 static int naev_missionStart( lua_State *L );
 static const luaL_reg naev_methods[] = {
    { "lang", naev_lang },
+   { "ticks", naev_ticks },
    { "keyGet", naev_keyGet },
    { "keyEnable", naev_keyEnable },
    { "keyEnableAll", naev_keyEnableAll },
@@ -74,7 +76,7 @@ int nlua_loadNaev( lua_State *L )
  *
  * @usage if naev.lang() == "en" then -- Language is english
  *
- *    @luareturn Two character identifier of the language.
+ *    @luatreturn string Two character identifier of the language.
  * @luafunc lang()
  */
 static int naev_lang( lua_State *L )
@@ -84,13 +86,27 @@ static int naev_lang( lua_State *L )
    return 1;
 }
 
+/**
+ * @brief Gets the SDL ticks.
+ *
+ * Useful for doing timing on Lua functions.
+ *
+ *    @luatreturn number The SDL ticks since the application started running.
+ * @luafunc ticks()
+ */
+static int naev_ticks( lua_State *L )
+{
+   lua_pushinteger(L, SDL_GetTicks());
+   return 1;
+}
+
 
 /**
  * @brief Gets the keybinding value by name.
  *
  * @usage bindname = naev.keyGet( "accel" )
  *
- *    @luaparam keyname Name of the keybinding to get value of.
+ *    @luatparam string keyname Name of the keybinding to get value of.
  * @luafunc keyGet( keyname )
  */
 static int naev_keyGet( lua_State *L )
@@ -153,8 +169,8 @@ static int naev_keyGet( lua_State *L )
  * Use with caution, this can make the player get stuck.
  *
  * @usage naev.keyEnable( "accel", false ) -- Disables the acceleration key
- *    @luaparam keyname Name of the key to disable (for example "accel").
- *    @luaparam enable Whether to enable or disable (if omitted disables).
+ *    @luatparam string keyname Name of the key to disable (for example "accel").
+ *    @luatparam[opt=false] boolean enable Whether to enable or disable.
  * @luafunc keyEnable( keyname, enable )
  */
 static int naev_keyEnable( lua_State *L )
@@ -203,8 +219,8 @@ static int naev_keyDisableAll( lua_State *L )
  * @brief Starts an event, does not start check conditions.
  *
  * @usage naev.eventStart( "Some Event" )
- *    @luaparam evtname Name of the event to start.
- *    @luareturn true on success.
+ *    @luatparam string evtname Name of the event to start.
+ *    @luatreturn boolean true on success.
  * @luafunc eventStart( evtname )
  */
 static int naev_eventStart( lua_State *L )
@@ -230,8 +246,8 @@ static int naev_eventStart( lua_State *L )
  * @brief Starts a mission, does no check start conditions.
  *
  * @usage naev.missionStart( "Some Mission" )
- *    @luaparam misnname Name of the mission to start.
- *    @luareturn true on success.
+ *    @luatparam string misnname Name of the mission to start.
+ *    @luatreturn boolean true on success.
  * @luafunc missionStart( misnname )
  */
 static int naev_missionStart( lua_State *L )

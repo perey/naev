@@ -15,8 +15,8 @@
  </presence>
  <general>
   <class>0</class>
-  <population>1500</population>
-  <hide>0.750000</hide>
+  <population>3500</population>
+  <hide>0.500000</hide>
   <services>
    <land/>
    <refuel/>

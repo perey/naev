@@ -36,17 +36,20 @@
 #define PILOT_TAKEOFF_DELAY      2. /**< Delay for takeoff animation. */
 /* Refueling. */
 #define PILOT_REFUEL_TIME        3. /**< Time to complete refueling. */
-#define PILOT_REFUEL_RATE        100./PILOT_REFUEL_TIME /**< Fuel per second. */
+#define PILOT_REFUEL_QUANTITY    100. /**< Amount transferred per refuel. */
+#define PILOT_REFUEL_RATE        PILOT_REFUEL_QUANTITY/PILOT_REFUEL_TIME /**< Fuel per second. */
 /* Misc. */
 #define PILOT_SIZE_APROX         0.8   /**< approximation for pilot size */
 #define PILOT_WEAPON_SETS        10    /**< Number of weapon sets the pilot has. */
 #define PILOT_WEAPSET_MAX_LEVELS 2     /**< Maximum amount of weapon levels. */
+#define PILOT_REVERSE_THRUST     0.4   /**< Ratio of normal thrust to apply when reversing. */
 
 
 /* hooks */
 enum {
    PILOT_HOOK_NONE,      /**< No hook. */
    PILOT_HOOK_DEATH,     /**< Pilot died. */
+   PILOT_HOOK_BOARDING,  /**< Pilot is boarding. */
    PILOT_HOOK_BOARD,     /**< Pilot got boarded. */
    PILOT_HOOK_DISABLE,   /**< Pilot got disabled. */
    PILOT_HOOK_UNDISABLE, /**< Pilot recovered from being disabled. */
@@ -67,6 +70,7 @@ enum {
 
 /* flags */
 #define pilot_clearFlagsRaw(a) memset((a), 0, PILOT_FLAGS_MAX) /**< Clears the pilot flags. */
+#define pilot_copyFlagsRaw(d,s) memcpy((d), (s), PILOT_FLAGS_MAX) /**< Copies the pilot flags from s to d. */
 #define pilot_isFlagRaw(a,f)  ((a)[f]) /**< Checks to see if a pilot flag is set. */
 #define pilot_setFlagRaw(a,f) ((a)[f] = 1) /**< Sets flags rawly. */
 #define pilot_isFlag(p,f)     ((p)->flags[f]) /**< Checks if flag f is set on pilot p. */
@@ -87,7 +91,7 @@ enum {
    PILOT_HOSTILE,      /**< Pilot is hostile to the player. */
    PILOT_FRIENDLY,     /**< Pilot is friendly to the player. */
    PILOT_COMBAT,       /**< Pilot is engaged in combat. */
-   PILOT_AFTERBURNER,  /**< Pilot has his afterburner activated. */
+   PILOT_AFTERBURNER,  /**< Pilot has their afterburner activated. */
    PILOT_HYP_PREP,     /**< Pilot is getting ready for hyperspace. */
    PILOT_HYP_BRAKE,    /**< PIlot has already braked before jumping. */
    PILOT_HYP_BEGIN,    /**< Pilot is starting engines. */
@@ -120,6 +124,8 @@ enum {
    PILOT_INVINC_PLAYER, /**< Pilot can not be hurt by the player. */
    PILOT_COOLDOWN,     /**< Pilot is in active cooldown mode. */
    PILOT_COOLDOWN_BRAKE, /**< Pilot is braking to enter active cooldown mode. */
+   PILOT_BRAKING,      /**< Pilot is braking. */
+   PILOT_HASSPEEDLIMIT, /**< Speed limiting is activated for Pilot.*/
    PILOT_FLAGS_MAX     /**< Maximum number of flags. */
 };
 typedef char PilotFlags[ PILOT_FLAGS_MAX ];
@@ -127,6 +133,7 @@ typedef char PilotFlags[ PILOT_FLAGS_MAX ];
 /* makes life easier */
 #define pilot_isPlayer(p)   pilot_isFlag(p,PILOT_PLAYER) /**< Checks if pilot is a player. */
 #define pilot_isDisabled(p) pilot_isFlag(p,PILOT_DISABLED) /**< Checks if pilot is disabled. */
+#define pilot_isStopped(p)  (VMOD(p->solid->vel) <= MIN_VEL_ERR)
 
 
 /**
@@ -176,6 +183,7 @@ typedef struct PilotOutfitSlot_ {
    double stimer;    /**< State timer, tracking current state. */
    double timer;     /**< Used to store when it was last used. */
    int level;        /**< Level in current weapon set (-1 is none). */
+   int weapset;      /**< First weapon set that uses the outfit (-1 is none). */
 
    /* Type-specific data. */
    union {
@@ -269,14 +277,15 @@ typedef struct Pilot_ {
    /* Object characteristics */
    Ship* ship;       /**< ship pilot is flying */
    Solid* solid;     /**< associated solid (physics) */
+   double base_mass; /**< Ship mass plus core outfit mass. */
    double mass_cargo; /**< Amount of cargo mass added. */
    double mass_outfit; /**< Amount of outfit mass added. */
    int tsx;          /**< current sprite x position, calculated on update. */
    int tsy;          /**< current sprite y position, calculated on update. */
 
    /* Properties. */
-   double cpu;       /**< Amount of CPU the pilot has left. */
-   double cpu_max;   /**< Maximum amount of CPU the pilot has. */
+   int cpu;       /**< Amount of CPU the pilot has left. */
+   int cpu_max;   /**< Maximum amount of CPU the pilot has. */
    double crew;      /**< Crew amount the player has (display it as (int)floor(), but it's analogue. */
    double cap_cargo; /**< Pilot's cargo capacity. */
 
@@ -285,6 +294,7 @@ typedef struct Pilot_ {
    double thrust_base; /**< Pilot's base thrust in px/s^2 (not modulated by mass). */
    double speed;     /**< Pilot's speed in px/s. */
    double speed_base; /**< Pilot's base speed in px/s (not modulated by mass). */
+   double speed_limit; /**< Pilot's maximum speed in px/s if limited by lua call. */
    double turn;      /**< Pilot's turn in rad/s. */
    double turn_base; /**< Pilot's base turn in rad/s (not modulated by mass). */
 
@@ -350,9 +360,11 @@ typedef struct Pilot_ {
    PilotOutfitSlot *outfit_weapon; /**< The weapon slots. */
 
    /* Primarily for AI usage. */
-   int ncannons; /**< Number of cannons equipped. */
-   int nturrets; /**< Number of turrets equipped. */
-   int nbeams;   /**< Number of beams equipped. */
+   int ncannons;      /**< Number of cannons equipped. */
+   int nturrets;      /**< Number of turrets equipped. */
+   int nbeams;        /**< Number of beams equipped. */
+   int njammers;      /**< Number of jammers equipped. */
+   int nafterburners; /**< Number of afterburners equipped. */
 
    /* For easier usage. */
    PilotOutfitSlot *afterburner; /**< the afterburner */
@@ -397,6 +409,7 @@ typedef struct Pilot_ {
    double comm_msgWidth; /**< Width of the message. */
    char *comm_msg;   /**< Comm message to display overhead. */
    PilotFlags flags; /**< used for AI and others */
+   double pdata;     /**< generic data for internal pilot use */
    double ptimer;    /**< generic timer for internal pilot use */
    double htimer;    /**< Hail animation timer. */
    double stimer;    /**< Shield regeneration timer. */
@@ -432,10 +445,12 @@ unsigned int pilot_getNearestEnemy_size( const Pilot* p, double target_mass_LB, 
 unsigned int pilot_getNearestEnemy_heuristic(const Pilot* p, double mass_factor, double health_factor, double damage_factor, double range_factor);
 unsigned int pilot_getNearestHostile (void); /* only for the player */
 unsigned int pilot_getNearestPilot( const Pilot* p );
+unsigned int pilot_getBoss( const Pilot* p );
 double pilot_getNearestPos( const Pilot *p, unsigned int *tp, double x, double y, int disabled );
 double pilot_getNearestAng( const Pilot *p, unsigned int *tp, double ang, int disabled );
 int pilot_getJumps( const Pilot* p );
 const glColour* pilot_getColour( const Pilot* p );
+int pilot_validTarget( const Pilot* p, const Pilot* target );
 
 /* non-lua wrappers */
 double pilot_relsize( const Pilot* cur_pilot, const Pilot* p );
@@ -446,11 +461,14 @@ double pilot_relhp( const Pilot* cur_pilot, const Pilot* p );
  * Combat.
  */
 void pilot_setTarget( Pilot* p, unsigned int id );
-double pilot_hit( Pilot* p, const Solid* w, const unsigned int shooter, const Damage *dmg );
+double pilot_hit( Pilot* p, const Solid* w, const unsigned int shooter,
+      const Damage *dmg, int reset );
 void pilot_updateDisable( Pilot* p, const unsigned int shooter );
 void pilot_explode( double x, double y, double radius, const Damage *dmg, const Pilot *parent );
 double pilot_face( Pilot* p, const double dir );
 int pilot_brake( Pilot* p );
+double pilot_brakeDist( Pilot *p, Vector2d *pos );
+int pilot_interceptPos( Pilot *p, double x, double y );
 void pilot_cooldown( Pilot *p );
 void pilot_cooldownEnd( Pilot *p, const char *reason );
 
@@ -515,7 +533,7 @@ void pilots_updateSystemFleet( const int deletedIndex );
  */
 void pilot_message( Pilot *p, unsigned int target, const char *msg, int ignore_int );
 void pilot_broadcast( Pilot *p, const char *msg, int ignore_int );
-void pilot_distress( Pilot *p, const char *msg, int ignore_int );
+void pilot_distress( Pilot *p, Pilot *attacker, const char *msg, int ignore_int );
 
 
 /*

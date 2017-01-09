@@ -266,6 +266,14 @@ static void intro_event_handler( int *stop, double *offset, double *vel )
    SDL_Event event;           /* user key-press, mouse-push, etc. */
 
    while (SDL_PollEvent(&event)) {
+#if SDL_VERSION_ATLEAST(2,0,0)
+      if (event.type == SDL_WINDOWEVENT &&
+            event.window.event == SDL_WINDOWEVENT_RESIZED) {
+         naev_resize( event.window.data1, event.window.data2 );
+         continue;
+      }
+#endif /* SDL_VERSION_ATLEAST(2,0,0) */
+
       if (event.type != SDL_KEYDOWN)
          continue;
 
@@ -293,6 +301,10 @@ static void intro_event_handler( int *stop, double *offset, double *vel )
       else if ((event.key.keysym.sym == SDLK_SPACE) ||
             (event.key.keysym.sym == SDLK_RETURN))
          *offset += 100;
+
+      /* Jump up. */
+      else if (event.key.keysym.sym == SDLK_BACKSPACE)
+         *offset -= 100;
 
       /* User is clearly flailing on keyboard. */
       else
@@ -369,7 +381,9 @@ int intro_display( const char *text, const char *mus )
    toolkit_clearKey();
 
    /* Enable keyrepeat just for the intro. */
+#if !SDL_VERSION_ATLEAST(2,0,0)
    SDL_EnableKeyRepeat( conf.repeat_delay, conf.repeat_freq );
+#endif /* !SDL_VERSION_ATLEAST(2,0,0) */
 
    /* Do a few calculations to figure out how many lines can be present on the
       screen at any given time. */
@@ -479,7 +493,12 @@ int intro_display( const char *text, const char *mus )
                        transition.tex->w, transition.tex->h, &transition.c );
 
       /* Display stuff. */
+#if SDL_VERSION_ATLEAST(2,0,0)
+      SDL_GL_SwapWindow( gl_screen.window );
+#else /* SDL_VERSION_ATLEAST(2,0,0) */
       SDL_GL_SwapBuffers();
+#endif /* SDL_VERSION_ATLEAST(2,0,0) */
+
 
       SDL_Delay(10); /* No need to burn CPU. */
 
@@ -497,7 +516,9 @@ int intro_display( const char *text, const char *mus )
       gl_freeTexture( transition.tex );
 
    /* Disable intro's key repeat. */
+#if !SDL_VERSION_ATLEAST(2,0,0)
    SDL_EnableKeyRepeat( 0, 0 );
+#endif /* !SDL_VERSION_ATLEAST(2,0,0) */
 
    /* Stop music, normal music will start shortly after. */
    music_stop();
